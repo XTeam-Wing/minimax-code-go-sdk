@@ -1,0 +1,12 @@
+MiniMax Code Go SDK
+Copyright (c) 2026 LittleWing
+
+This module is an independent client for the MiniMax Code app-server protocol.
+Protocol shapes were recovered from the MIT-licensed npm package
+@minimax-ai/code version 0.7.8
+(tarball SHA-256 f497f02bac0f8fc8ad3791d59e8827208684ab466bec94cd7702594d19f5735a),
+published by MiniMax. This repository does not vendor that CLI, its native
+addons, or its embedded runtimes.
+
+The wire protocol is MiniMax's. It is not the OpenAI Codex app-server protocol,
+and this module does not claim Codex wire compatibility.
