@@ -1011,7 +1011,7 @@ def render_inventory_md(methods) -> str:
         "",
         "Generated from `@minimax-ai/code` 0.7.8 IDL tables (`k` unary and `Yi` SSE) cross-checked against the registrar call shape. This is not an OpenAI Codex wire protocol.",
         "",
-        f"Denominator: **{len(methods)}** methods. `RawCall` is not one of them.",
+        f"Denominator: **{len(methods)}** IDL methods. `RawCall` is not one of them. JSON-RPC outer methods, server events, and mavis dispatcher leaves are outside this table. A live coverage count is a generated report, not a number stored here.",
         "",
         "Scalar means the JSON literal is preserved. That is either a schema `kind: scalar` with no single binding or structFields tsType, or an alias whose wire primitive was not recovered. Aliases are typed only when a 0.7.8 handler shows the JSON value. `SessionKind` stays Scalar because the server accepts both the strings conversation, task, peek, channel, cron, unknown and the numbers 0 through 5. `CloudCronScheduleKind` and `WorkShareKind` stay Scalar because no reader was recovered.",
         "",
