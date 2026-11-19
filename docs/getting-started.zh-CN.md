@@ -47,7 +47,7 @@ _, err = client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 ## 测试怎么跑
 
-不带模型的官方进程测试需要临时 data dir 和 workspace，并显式使用 `--auth-mode desktop`。它不会调用 `SendMessage`。`CreateGoal` 在这个模式下可以写入目标记录，这不是模型回合。活动目标上的 `DismissGoal` 返回 409，直到目标完成。
+不带模型的官方进程测试需要临时 data dir 和 workspace，并显式使用 `--auth-mode desktop`。它不会调用 `SendMessage`。`CreateGoal` 在这个模式下可以写入目标记录，这不是模型回合。`token_budget` 不是正在进行的那次请求的硬上限。请求记账之后，主机用 `tokensUsed` 和预算比较；`tokensUsed` 含输入、缓存写入、缓存读取和输出，所以一次响应可以越过预算，然后状态变成 `budget_limited`。活动目标上的 `DismissGoal` 返回 409，直到目标完成。
 
 无界面 API key 要先在隔离的 `MINIMAX_DATA_DIR` 里执行 `provider set-minimax-key --api-key-env MCODE_PROVIDER_API_KEY` 和 `provider use api-key`，启动 SDK 时不要设置 `AuthMode`。带模型的场景是 `TestLiveModelTurn` 和 `TestLiveGoalAndSubagent`，只有 `MCODE_E2E_LLM=1` 才会跑。目标创建会启动一轮模型。子代理必须看到 `subagent.execution` 且子会话能被 `GetSession` 读到。提示里写了子代理不算成功。
 
