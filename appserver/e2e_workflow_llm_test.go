@@ -55,6 +55,7 @@ func TestLiveWorkflowGoFix(t *testing.T) {
 
 func TestLiveWorkflowSessionContinue(t *testing.T) {
 	client, desk, sessionID, data := startWorkflowLLMParts(t)
+	workspace := client.opt.Workspace
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
 	defer cancel()
 	watchPermissions(t, ctx, desk, sessionID, denyAll)
@@ -64,10 +65,17 @@ func TestLiveWorkflowSessionContinue(t *testing.T) {
 		t.Fatal(err)
 	}
 	client.Close()
-	restarted := startWorkflow(t, data, t.TempDir(), "")
+	restarted := startWorkflow(t, data, workspace, "")
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel2()
 	desk = restarted.Desktop()
+	again, err := desk.GetSession(ctx2, desktop.GetSessionReq{ID: sessionID})
+	if err != nil || again.Session == nil || again.Session.SessionID == nil {
+		t.Fatalf("session missing after restart: %v", err)
+	}
+	if id, ok := again.Session.SessionID.String(); !ok || id != sessionID {
+		t.Fatalf("session id %q", id)
+	}
 	limit := desktop.Number(50)
 	messages, err := desk.GetMessages(ctx2, desktop.GetMessagesReq{ID: sessionID, Limit: &limit})
 	if err != nil {
@@ -76,8 +84,8 @@ func TestLiveWorkflowSessionContinue(t *testing.T) {
 	if countMarker(messages, marker) != 1 {
 		t.Fatalf("marker count %d after reconnect", countMarker(messages, marker))
 	}
-	again := "If the conversation already contains " + marker + ", reply again and do not write files."
-	if err := runTurn(ctx2, desk, sessionID, again, scenarioSelection()); err != nil {
+	follow := "If the conversation already contains " + marker + ", reply again and do not write files."
+	if err := runTurn(ctx2, desk, sessionID, follow, scenarioSelection()); err != nil {
 		t.Fatal(err)
 	}
 	messages, err = desk.GetMessages(ctx2, desktop.GetMessagesReq{ID: sessionID, Limit: &limit})
@@ -91,8 +99,9 @@ func TestLiveWorkflowSessionContinue(t *testing.T) {
 		ID:       "feature.session-continue",
 		Layer:    "feature",
 		Result:   "pass",
-		Evidence: "GetMessages after a new process still contained the first turn marker once before the follow-up",
+		Evidence: "GetSession and GetMessages after a new process still showed the same session and the first marker, before abort",
 	})
+	releaseWorkflow(t, desk, sessionID)
 }
 
 func TestLiveWorkflowStreamCancel(t *testing.T) {
@@ -151,7 +160,7 @@ func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 	_, desk, sessionID, workspace := startWorkflowLLM(t)
 	ctx, cancel := context.WithTimeout(context.Background(), goalWall+time.Minute)
 	defer cancel()
-	initGoBugRepo(t, workspace)
+	testHash, modHash := initShareRepo(t, workspace)
 	budget := desktop.Number(goalScenarioBudget)
 	if raw := os.Getenv("MCODE_E2E_GOAL_TOKEN_BUDGET"); raw != "" {
 		var n desktop.Number
@@ -160,7 +169,7 @@ func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 		}
 		budget = n
 	}
-	objective := "TestAdd fails because Add subtracts. Fix only add.go so go test passes. Do not modify add_test.go or go.mod."
+	objective := "SplitCents(100, 3) returns [33 33 33]. TestSplitCents wants [34 33 33]. Fix only share.go. Do not modify share_test.go or go.mod."
 	watchPermissions(t, ctx, desk, sessionID, allowOnceWorkspaceWrite)
 	req := desktop.CreateGoalReq{SessionID: sessionID, Objective: &objective, TokenBudget: &budget}
 	if err := desktop.ValidateCreateGoal(req); err != nil {
@@ -201,13 +210,9 @@ func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 		time.Sleep(2 * time.Second)
 	}
 	trace := goalTrace(last, stop, samples, workspace)
-	verdict := ""
-	if last.LastVerification != nil {
-		verdict = scalarString(last.LastVerification.Verdict)
-	}
-	diffOK, diffText := goFixDiff(workspace)
+	diffOK, diffText := shareDiff(workspace, testHash, modHash)
 	testOut, testErr := runGoTest(workspace)
-	if stop != "" || !strings.EqualFold(verdict, "pass") || testErr != nil || !diffOK {
+	if stop != "" || !goalSettledMet(last) || testErr != nil || !diffOK {
 		writeFeatureRow(t, featureRow{
 			ID:       "feature.goal-deliverable",
 			Layer:    "feature",
@@ -222,6 +227,7 @@ func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 		Result:   "pass",
 		Evidence: trace,
 	})
+	releaseWorkflow(t, desk, sessionID)
 }
 
 func TestLiveWorkflowSubagent(t *testing.T) {
@@ -436,10 +442,9 @@ func startWorkflowLLMParts(t *testing.T) (*Client, *desktop.Client, string, stri
 		t.Fatalf("session SelectModel changed the process selection from %q to %q", before, after)
 	}
 	t.Cleanup(func() {
-		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cleanupCancel()
-		reason := "sdk workflow cleanup"
-		_, _ = desk.AbortSession(cleanupCtx, desktop.AbortSessionReq{ID: sessionID, Reason: &reason})
+		// Safety net after the test function returns. A supplied data directory
+		// is not removed. Persistence assertions must already have run.
+		releaseWorkflow(t, desk, sessionID)
 	})
 	return client, desk, sessionID, data
 }
@@ -472,12 +477,31 @@ func countMarker(resp desktop.GetMessagesResp, marker string) int {
 	return n
 }
 
-func initGoBugRepo(t *testing.T, dir string) {
+func initShareRepo(t *testing.T, dir string) ([32]byte, [32]byte) {
 	t.Helper()
-	writeGoBug(t, dir)
+	files := map[string]string{
+		"go.mod":        "module example.com/share\n\ngo 1.22\n",
+		"share.go":      "package share\n\nfunc SplitCents(total, n int) []int {\n\tif n <= 0 {\n\t\treturn nil\n\t}\n\tbase := total / n\n\tout := make([]int, n)\n\tfor i := range out {\n\t\tout[i] = base\n\t}\n\treturn out\n}\n",
+		"share_test.go": "package share\n\nimport \"testing\"\n\nfunc TestSplitCents(t *testing.T) {\n\tgot := SplitCents(100, 3)\n\twant := []int{34, 33, 33}\n\tif len(got) != len(want) {\n\t\tt.Fatalf(\"got %v\", got)\n\t}\n\tfor i := range want {\n\t\tif got[i] != want[i] {\n\t\t\tt.Fatalf(\"got %v want %v\", got, want)\n\t\t}\n\t}\n}\n",
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	runGit(t, dir, "init", "-b", "master")
-	runGit(t, dir, "add", "go.mod", "add.go", "add_test.go")
-	runGit(t, dir, "-c", "user.email=sdk@example.com", "-c", "user.name=sdk", "commit", "-m", "failing add")
+	runGit(t, dir, "add", "go.mod", "share.go", "share_test.go")
+	runGit(t, dir, "-c", "user.email=sdk@example.com", "-c", "user.name=sdk", "commit", "-m", "equal split")
+	return hashFile(t, filepath.Join(dir, "share_test.go")), hashFile(t, filepath.Join(dir, "go.mod"))
+}
+
+func hashFile(t *testing.T, path string) [32]byte {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sha256.Sum256(body)
 }
 
 func runGit(t *testing.T, dir string, args ...string) {
@@ -490,36 +514,52 @@ func runGit(t *testing.T, dir string, args ...string) {
 }
 
 func runGoTest(dir string) (string, error) {
-	cmd := exec.Command("go", "test", ".")
+	cmd := exec.Command("go", "test", "-count=1", "./...")
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
 
-func goFixDiff(dir string) (bool, string) {
+func goalSettledMet(goal desktop.GoalState) bool {
+	status, ok := goal.StatusText()
+	if !ok || status != desktop.GoalStatusComplete || goal.LastVerification == nil || goal.LastVerification.Verdict == nil {
+		return false
+	}
+	verdict, ok := goal.LastVerification.Verdict.String()
+	return ok && verdict == "met" && scalarString(goal.StatusReason) == "complete(verifier_met)"
+}
+
+func shareDiff(dir string, testHash, modHash [32]byte) (bool, string) {
 	cmd := exec.Command("git", "-C", dir, "diff", "--name-only")
 	out, err := cmd.CombinedOutput()
 	text := string(out)
 	if err != nil {
 		return false, text + err.Error()
 	}
-	hasAdd := false
-	protected := false
-	for _, name := range strings.Fields(strings.ReplaceAll(text, "\n", " ")) {
-		switch name {
-		case "add.go":
-			hasAdd = true
-		case "add_test.go", "go.mod":
-			protected = true
-		}
+	names := strings.Fields(strings.ReplaceAll(text, "\n", " "))
+	if len(names) != 1 || names[0] != "share.go" {
+		return false, text
 	}
-	body, readErr := os.ReadFile(filepath.Join(dir, "add.go"))
-	source := string(body)
-	if readErr != nil {
-		source = readErr.Error()
+	if hashFileQuiet(filepath.Join(dir, "share_test.go")) != testHash || hashFileQuiet(filepath.Join(dir, "go.mod")) != modHash {
+		return false, text + "\ninvariant file changed"
 	}
-	ok := hasAdd && !protected && strings.Contains(source, "+") && !strings.Contains(source, "a - b")
-	return ok, text + "\n" + source
+	return true, text
+}
+
+func hashFileQuiet(path string) [32]byte {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return [32]byte{}
+	}
+	return sha256.Sum256(body)
+}
+
+func releaseWorkflow(t *testing.T, desk *desktop.Client, sessionID string) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	reason := "sdk workflow cleanup"
+	_, _ = desk.AbortSession(ctx, desktop.AbortSessionReq{ID: sessionID, Reason: &reason})
 }
 
 func mustStatus(goal desktop.GoalState) string {

@@ -51,6 +51,37 @@ func TestGoalStateReadsStrings(t *testing.T) {
 	}
 }
 
+func TestGoalVerificationWireMet(t *testing.T) {
+	var goal GoalState
+	raw := []byte(`{"status":"complete","status_reason":"complete(verifier_met)","last_verification":{"backend":"subagent","verdict":"met","reason":"checked","missing":[]}}`)
+	if err := json.Unmarshal(raw, &goal); err != nil {
+		t.Fatal(err)
+	}
+	status, ok := goal.StatusText()
+	if !ok || status != GoalStatusComplete {
+		t.Fatalf("status %q", status)
+	}
+	reason, ok := goal.StatusReason.String()
+	if !ok || reason != "complete(verifier_met)" {
+		t.Fatalf("reason %q", reason)
+	}
+	if goal.LastVerification == nil || goal.LastVerification.Verdict == nil {
+		t.Fatal("missing verdict")
+	}
+	verdict, ok := goal.LastVerification.Verdict.String()
+	if !ok || verdict != "met" {
+		t.Fatalf("verdict %q", verdict)
+	}
+	var passed GoalState
+	if err := json.Unmarshal([]byte(`{"status":"complete","status_reason":"complete(verifier_met)","last_verification":{"verdict":"PASS"}}`), &passed); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := passed.LastVerification.Verdict.String()
+	if !ok || got == "met" {
+		t.Fatalf("PASS decoded as %q", got)
+	}
+}
+
 func TestGoalRequestsDoNotInventEffort(t *testing.T) {
 	objective := "reply pong"
 	behavior := GoalSendQueue

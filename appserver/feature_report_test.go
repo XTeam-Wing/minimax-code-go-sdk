@@ -35,7 +35,7 @@ func TestGoalWaitAllowsVerifierAfterParentPlateau(t *testing.T) {
 	if stop := wait.step(start.Add(3*time.Minute), 150000, 7, desktop.GoalStatusActive, ""); stop != "wall" {
 		t.Fatalf("stop %q", stop)
 	}
-	if stop := wait.step(start.Add(time.Minute), 200000, 8, desktop.GoalStatusActive, "pass"); stop != "" {
+	if stop := wait.step(start.Add(time.Minute), 200000, 8, desktop.GoalStatusActive, "met"); stop != "" {
 		t.Fatalf("verdict should end the wait: %s", stop)
 	}
 }

@@ -27,7 +27,9 @@ const (
 // The host then dispatches a separate foreground agent named verifier on
 // the same provider/model key. GetGoal status_reason paused(verifier_runtime)
 // is only the mapped issue spawn_failed or child_crash, and last_verification
-// stays unset until a verdict is stored. The verifier task input is
+// stays unset until a verdict is stored. The stored verdict string is
+// "met", and the status reason is complete(verifier_met). "pass" and
+// "PASS" are not that field. The verifier task input is
 // agent_name "verifier" and model set to the worker key "provider/model".
 // That key drops thinking. The task selection is therefore model only.
 // When that string does not match the parent session model, the source
