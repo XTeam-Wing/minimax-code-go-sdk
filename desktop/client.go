@@ -50,6 +50,9 @@ func callUnary[T any](c *Client, ctx context.Context, spec methodSpec, req any) 
 	if err := json.Unmarshal(resp.Body, &zero); err != nil {
 		return zero, &DecodeError{Method: spec.Name, Body: resp.Body, Err: err}
 	}
+	if err := envelopeError(spec.Name, resp.Body); err != nil {
+		return zero, err
+	}
 	return zero, nil
 }
 
