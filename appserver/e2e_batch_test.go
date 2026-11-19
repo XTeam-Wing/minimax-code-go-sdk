@@ -26,7 +26,7 @@ func TestLiveLocalBatch(t *testing.T) {
 	desk := client.Desktop()
 	ledger := newCoverageLedger()
 	defer func() {
-		path, err := ledger.write()
+		path, err := ledger.writeInventory()
 		if err != nil {
 			t.Errorf("coverage report: %v", err)
 			return
@@ -98,26 +98,9 @@ func TestLiveLocalBatch(t *testing.T) {
 	ledger.note("idl.CreateProject", "real", "project key returned")
 	sweepReads(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
 	assertLocalWrites(t, ctx, desk, ledger, workspace, projectKey)
+	assertLocalCRUD(t, ctx, client, desk, ledger, workspace, agent, sessionID)
 	assertMavisReads(t, ctx, desk, ledger, workspace)
-
-	for _, method := range desktop.MethodCatalog() {
-		id := "idl." + method.Name
-		if _, ok := findNote(ledger, id); ok {
-			continue
-		}
-		switch {
-		case method.GatewayOverride:
-			ledger.note(id, "blocked", "drive gateway can publish or mutate a remote site")
-		case method.SideEffect == "auth_credential":
-			ledger.note(id, "blocked", "writes or reads a credential; not called with a real key")
-		case method.SideEffect == "approval":
-			ledger.note(id, "blocked", "permission reply is not auto-approved")
-		case method.Transport == "sse" && method.Name != "SubscribeGlobalEvents":
-			ledger.note(id, "blocked", "stream would hold the server; opened only for the global event test")
-		default:
-			ledger.note(id, "notrun", "not called in the local batch")
-		}
-	}
+	noteUpstreamGaps(ledger)
 	ledger.note("request.initialize", "real", "Start completed the handshake")
 	ledger.note("client-notification.initialized", "real", "Start sent initialized")
 }
@@ -163,7 +146,12 @@ func sweepReads(t *testing.T, ctx context.Context, desk *desktop.Client, ledger 
 			ledger.note(id, outcome, detail)
 			continue
 		}
-		ledger.note(id, "real", "GET decoded")
+		detail, ok := populatedDetail(out[0])
+		if !ok {
+			ledger.note(id, "notrun", "response decoded with no populated typed field")
+			continue
+		}
+		ledger.note(id, "real", detail)
 	}
 }
 
@@ -392,6 +380,45 @@ func assertLocalWrites(t *testing.T, ctx context.Context, desk *desktop.Client, 
 	if !found {
 		t.Fatal("created hook was not in the returned list")
 	}
+	renamedCommand := "true"
+	updatedHook, err := desk.UpdateLocalHook(ctx, desktop.UpdateLocalHookReq{
+		HookID:           hookID,
+		Scope:            desktop.LocalHookScopeUser,
+		ExpectedRevision: nextRevision,
+		Definition: &desktop.LocalHookDefinition{
+			Event:   "SessionStart",
+			Command: renamedCommand,
+			Name:    &name,
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateLocalHook: %v", err)
+	}
+	if !hookCommand(updatedHook.Hooks, hookID, renamedCommand) {
+		t.Fatal("updated hook command was not returned")
+	}
+	if updatedHook.Config != nil {
+		if rev, ok := updatedHook.Config.Revision.String(); ok && rev != "" {
+			nextRevision = rev
+		}
+	}
+	disabled, err := desk.SetLocalHookEnabled(ctx, desktop.SetLocalHookEnabledReq{
+		HookID:           hookID,
+		Scope:            desktop.LocalHookScopeUser,
+		Enabled:          false,
+		ExpectedRevision: &nextRevision,
+	})
+	if err != nil {
+		t.Fatalf("SetLocalHookEnabled: %v", err)
+	}
+	if !hookEnabled(disabled.Hooks, hookID, false) {
+		t.Fatal("hook enabled flag did not become false")
+	}
+	if disabled.Config != nil {
+		if rev, ok := disabled.Config.Revision.String(); ok && rev != "" {
+			nextRevision = rev
+		}
+	}
 	if _, err := desk.DeleteLocalHook(ctx, desktop.DeleteLocalHookReq{
 		HookID:           hookID,
 		Scope:            desktop.LocalHookScopeUser,
@@ -401,6 +428,8 @@ func assertLocalWrites(t *testing.T, ctx context.Context, desk *desktop.Client, 
 	}
 	ledger.note("idl.ListLocalHooks", "real", "user scope config")
 	ledger.note("idl.CreateLocalHook", "real", "hook id returned and listed")
+	ledger.note("idl.UpdateLocalHook", "real", "command updated to true")
+	ledger.note("idl.SetLocalHookEnabled", "real", "enabled became false")
 	ledger.note("idl.DeleteLocalHook", "real", "hook deleted")
 
 	key := projectKey
@@ -526,9 +555,64 @@ func jsonObject(raw []byte) bool {
 	return len(raw) > 0 && raw[0] == '{'
 }
 
-func findNote(l *coverageLedger, id string) (CoverageOutcome, bool) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	row, ok := l.rows[id]
-	return row, ok
+func populatedDetail(v reflect.Value) (string, bool) {
+	return populated(v, 0)
+}
+
+func populated(v reflect.Value, depth int) (string, bool) {
+	if !v.IsValid() || depth > 4 {
+		return "", false
+	}
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface:
+		if v.IsNil() {
+			return "", false
+		}
+		return populated(v.Elem(), depth+1)
+	case reflect.Slice, reflect.Map:
+		if v.IsNil() {
+			return "", false
+		}
+		return "len=" + strconv.Itoa(v.Len()), true
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			name := v.Type().Field(i).Name
+			if name == "BaseResp" {
+				continue
+			}
+			if detail, ok := populated(field, depth+1); ok {
+				return name + " " + detail, true
+			}
+		}
+		return "", false
+	default:
+		if v.IsZero() {
+			return "", false
+		}
+		return "set", true
+	}
+}
+
+func hookCommand(hooks []desktop.LocalHookItem, id, command string) bool {
+	for _, item := range hooks {
+		got, ok := item.HookID.String()
+		if !ok || got != id || item.Definition == nil {
+			continue
+		}
+		return item.Definition.Command == command
+	}
+	return false
+}
+
+func hookEnabled(hooks []desktop.LocalHookItem, id string, want bool) bool {
+	for _, item := range hooks {
+		got, ok := item.HookID.String()
+		if !ok || got != id {
+			continue
+		}
+		enabled, ok := item.Enabled.Bool()
+		return ok && enabled == want
+	}
+	return false
 }

@@ -1,6 +1,9 @@
 package desktop
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestEmptyRequired(t *testing.T) {
 	field, empty := EmptyRequired("ListBunnyTraceEvents", ListBunnyTraceEventsReq{})
@@ -18,5 +21,9 @@ func TestEmptyRequired(t *testing.T) {
 	field, empty = EmptyRequired("NoSuchMethod", struct{}{})
 	if empty {
 		t.Fatal("unknown method")
+	}
+	text := Prerequisite("ListBunnyTraceEvents")
+	if !strings.Contains(text, "session_id") || !strings.Contains(text, "GET") {
+		t.Fatal(text)
 	}
 }

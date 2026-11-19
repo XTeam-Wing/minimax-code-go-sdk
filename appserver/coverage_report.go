@@ -11,6 +11,7 @@ import (
 // module. It is not a source of truth checked into the repository.
 type CoverageOutcome struct {
 	ID      string `json:"id"`
+	Surface string `json:"surface,omitempty"`
 	Outcome string `json:"outcome"`
 	Detail  string `json:"detail,omitempty"`
 }
@@ -31,6 +32,13 @@ func (l *coverageLedger) note(id, outcome, detail string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.rows[id] = CoverageOutcome{ID: id, Outcome: outcome, Detail: detail}
+}
+
+func (l *coverageLedger) outcome(id string) (CoverageOutcome, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	row, ok := l.rows[id]
+	return row, ok
 }
 
 func (l *coverageLedger) snapshot() []CoverageOutcome {

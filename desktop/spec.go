@@ -1,6 +1,9 @@
 package desktop
 
-import "reflect"
+import (
+	"reflect"
+	"strings"
+)
 
 // MethodInfo is one generated DesktopService method.
 // SideEffect is the static inference shipped with the 0.7.8 research inventory
@@ -101,4 +104,25 @@ func EmptyRequired(method string, req any) (field string, empty bool) {
 		}
 	}
 	return "", false
+}
+
+// Prerequisite names the required inputs of one catalog method.
+// It is a description of the request, not a recorded test result.
+func Prerequisite(method string) string {
+	spec, ok := specByName[method]
+	if !ok {
+		return "not in the 0.7.8 catalog"
+	}
+	var parts []string
+	for _, binding := range spec.Bindings {
+		if !binding.Required {
+			continue
+		}
+		parts = append(parts, binding.Field+" as "+binding.Kind+" "+binding.Wire)
+	}
+	line := spec.HTTPMethod + " " + spec.Path
+	if len(parts) == 0 {
+		return line + " accepts an empty request and was not called"
+	}
+	return line + " needs " + strings.Join(parts, "; ")
 }

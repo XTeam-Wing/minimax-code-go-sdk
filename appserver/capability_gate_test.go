@@ -1,7 +1,10 @@
 package appserver
 
 import (
+	"encoding/json"
 	"os"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/XTeam-Wing/minimax-code-go-sdk/desktop"
@@ -88,25 +91,25 @@ func coverageInventory() []coveragePolicy {
 		{ID: "request.account.login.start", Surface: "request", Policy: "blocked", Reason: "interactive OAuth against a dedicated account"},
 		{ID: "request.account.login.cancel", Surface: "request", Policy: "blocked", Reason: "cancels an OAuth login that this process does not start"},
 		{ID: "request.account.logout", Surface: "request", Policy: "blocked", Reason: "logs out the account in the data directory"},
-		{ID: "request.server.prepareRestart", Surface: "request", Policy: "server"},
-		{ID: "request.desktopService.transport", Surface: "request", Policy: "server"},
+		{ID: "request.server.prepareRestart", Surface: "request", Policy: "server", Reason: "call server/prepareRestart on an owned temporary process and observe its response"},
+		{ID: "request.desktopService.transport", Surface: "request", Policy: "server", Reason: "opens the desktop HTTP tunnel; this batch uses the in-process Desktop client"},
 		{ID: "client-notification.initialized", Surface: "client-notification", Policy: "server"},
 		{ID: "client-notification.runtime.authContext", Surface: "client-notification", Policy: "blocked", Reason: "would inject an access token"},
-		{ID: "client-notification.desktopService.transport", Surface: "client-notification", Policy: "server"},
+		{ID: "client-notification.desktopService.transport", Surface: "client-notification", Policy: "server", Reason: "sent when a desktop tunnel attaches; this batch does not open that notification"},
 		{ID: "server-notification.account.login.completed", Surface: "server-notification", Policy: "blocked", Reason: "server-originated login completion"},
 		{ID: "server-notification.account.updated", Surface: "server-notification", Policy: "blocked", Reason: "server-originated account change"},
-		{ID: "server-notification.desktopService.transport", Surface: "server-notification", Policy: "server"},
-		{ID: "error.-32700", Surface: "error", Policy: "server"},
-		{ID: "error.-32600", Surface: "error", Policy: "server"},
-		{ID: "error.-32601", Surface: "error", Policy: "server"},
-		{ID: "error.-32602", Surface: "error", Policy: "server"},
-		{ID: "error.-32603", Surface: "error", Policy: "server"},
-		{ID: "error.-32001", Surface: "error", Policy: "server"},
-		{ID: "error.-32002", Surface: "error", Policy: "server"},
-		{ID: "error.-32003", Surface: "error", Policy: "server"},
-		{ID: "error.-32004", Surface: "error", Policy: "server"},
-		{ID: "error.-32005", Surface: "error", Policy: "server"},
-		{ID: "error.-32010", Surface: "error", Policy: "server"},
+		{ID: "server-notification.desktopService.transport", Surface: "server-notification", Policy: "server", Reason: "emitted when the desktop tunnel changes; not observed without that tunnel"},
+		{ID: "error.-32700", Surface: "error", Policy: "server", Reason: "send a non-JSON frame on the RPC connection"},
+		{ID: "error.-32600", Surface: "error", Policy: "server", Reason: "send a JSON-RPC object without a method"},
+		{ID: "error.-32601", Surface: "error", Policy: "server", Reason: "account/read is the live probe; 0.7.8 answers method not found"},
+		{ID: "error.-32602", Surface: "error", Policy: "server", Reason: "send a known method with a missing required parameter"},
+		{ID: "error.-32603", Surface: "error", Policy: "server", Reason: "needs a server-side internal failure that this batch does not force"},
+		{ID: "error.-32001", Surface: "error", Policy: "server", Reason: "needs the server to report overloaded; the client must not retry"},
+		{ID: "error.-32002", Surface: "error", Policy: "server", Reason: "send a request before initialize"},
+		{ID: "error.-32003", Surface: "error", Policy: "server", Reason: "send initialize a second time on the same connection"},
+		{ID: "error.-32004", Surface: "error", Policy: "server", Reason: "initialize with a transportProtocolVersion other than 2"},
+		{ID: "error.-32005", Surface: "error", Policy: "server", Reason: "initialize with a protocolVersion other than 1"},
+		{ID: "error.-32010", Surface: "error", Policy: "server", Reason: "needs a failed account operation; login and logout are not called"},
 		{ID: "unix.readyz", Surface: "unix", Policy: "server"},
 		{ID: "unix.healthz", Surface: "unix", Policy: "server"},
 		{ID: "mavis.health", Surface: "mavis", Policy: "server"},
@@ -125,6 +128,78 @@ func coverageInventory() []coveragePolicy {
 		{ID: "negative.dismiss-active-goal", Surface: "negative", Policy: "server", Reason: "DismissGoal on an active goal is HTTP 409 until the goal is complete"},
 	}...)
 	return rows
+}
+
+func (l *coverageLedger) writeInventory() (string, error) {
+	noted := map[string]CoverageOutcome{}
+	for _, row := range l.snapshot() {
+		noted[row.ID] = row
+	}
+	var rows []CoverageOutcome
+	baseline, extras := 0, 0
+	for _, policy := range coverageInventory() {
+		if baselineSurface(policy.Surface) {
+			baseline++
+		} else {
+			extras++
+		}
+		row, ok := noted[policy.ID]
+		if !ok {
+			outcome := "notrun"
+			if policy.Policy == "blocked" {
+				outcome = "blocked"
+			}
+			row = CoverageOutcome{ID: policy.ID, Outcome: outcome, Detail: missingDetail(policy)}
+		}
+		row.Surface = policy.Surface
+		rows = append(rows, row)
+		delete(noted, policy.ID)
+	}
+	var rest []CoverageOutcome
+	for _, row := range noted {
+		rest = append(rest, row)
+	}
+	for i := range rest {
+		if rest[i].Surface == "" {
+			rest[i].Surface = "extra"
+		}
+	}
+	sort.Slice(rest, func(i, j int) bool { return rest[i].ID < rest[j].ID })
+	extras += len(rest)
+	rows = append(rows, rest...)
+	body, err := json.MarshalIndent(struct {
+		Partial  bool              `json:"partial_inventory"`
+		Baseline int               `json:"baseline_rows"`
+		Extras   int               `json:"extra_rows"`
+		Rows     []CoverageOutcome `json:"rows"`
+	}{Partial: true, Baseline: baseline, Extras: extras, Rows: rows}, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	path := coverageReportPath()
+	if err := os.WriteFile(path, body, 0o600); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func baselineSurface(surface string) bool {
+	switch surface {
+	case "idl", "request", "client-notification", "server-notification", "error", "unix":
+		return true
+	default:
+		return false
+	}
+}
+
+func missingDetail(policy coveragePolicy) string {
+	if policy.Reason != "" {
+		return policy.Reason
+	}
+	if name, ok := strings.CutPrefix(policy.ID, "idl."); ok {
+		return desktop.Prerequisite(name)
+	}
+	return "not exercised in this run"
 }
 
 func blockedPolicy() map[string]string {
