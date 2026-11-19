@@ -15,8 +15,8 @@ import (
 )
 
 // TestLiveSurface calls official app-server routes that do not need a model
-// turn, plus the desktop-auth rejection of CreateGoal. A 503 is evidence that
-// the goal execution did not start. It is not evidence that goal mode works.
+// turn. CreateGoal returns a goal record. DismissGoal on that active goal is
+// HTTP 409 until the goal is complete, and DeleteGoal removes the record.
 func TestLiveSurface(t *testing.T) {
 	client, workspace := startLive(t, "desktop")
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
@@ -168,6 +168,11 @@ func TestLiveSurface(t *testing.T) {
 	}
 	if id, ok := fetched.Goal.ID(); !ok || id != goalID {
 		t.Fatalf("GetGoal id %q", id)
+	}
+	_, err = desk.DismissGoal(ctx, desktop.DismissGoalReq{SessionID: sessionID, GoalID: goalID})
+	var dismissErr *desktop.StatusError
+	if !errors.As(err, &dismissErr) || dismissErr.Status != 409 {
+		t.Fatalf("DismissGoal on an active goal: %v", err)
 	}
 	deleted, err := desk.DeleteGoal(ctx, desktop.DeleteGoalReq{SessionID: sessionID})
 	if err != nil {

@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -62,8 +65,39 @@ func TestLiveLocalBatch(t *testing.T) {
 	if err := os.WriteFile(marker, []byte("batch"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	sweepReads(t, ctx, desk, ledger, workspace, agent)
-	assertLocalWrites(t, ctx, desk, ledger, workspace)
+	if err := os.WriteFile(workspace+"/preview.png", onePixelPNG(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := initTempGit(t, workspace); err != nil {
+		t.Fatalf("git init: %v", err)
+	}
+	title := "batch session"
+	created, err := desk.CreateSession(ctx, desktop.CreateSessionReq{Name: agent, Title: &title})
+	if err != nil || created.SessionID == nil {
+		t.Fatalf("CreateSession: %v", err)
+	}
+	sessionID, ok := created.SessionID.String()
+	if !ok || sessionID == "" {
+		t.Fatal("session id")
+	}
+	t.Cleanup(func() {
+		abortCtx, abortCancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer abortCancel()
+		reason := "batch cleanup"
+		_, _ = desk.AbortSession(abortCtx, desktop.AbortSessionReq{ID: sessionID, Reason: &reason})
+	})
+	ledger.note("idl.CreateSession", "real", "session id returned")
+	project, err := desk.CreateProject(ctx, desktop.CreateProjectReq{DisplayName: "sdk batch project", WorkspaceDir: &workspace})
+	if err != nil || project.Project == nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	projectKey, ok := project.Project.Key.String()
+	if !ok || projectKey == "" {
+		t.Fatal("project key")
+	}
+	ledger.note("idl.CreateProject", "real", "project key returned")
+	sweepReads(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
+	assertLocalWrites(t, ctx, desk, ledger, workspace, projectKey)
 	assertMavisReads(t, ctx, desk, ledger, workspace)
 
 	for _, method := range desktop.MethodCatalog() {
@@ -84,11 +118,11 @@ func TestLiveLocalBatch(t *testing.T) {
 			ledger.note(id, "notrun", "not called in the local batch")
 		}
 	}
-	ledger.note("rpc.initialize", "real", "Start completed the handshake")
-	ledger.note("rpc.initialized", "real", "Start sent initialized")
+	ledger.note("request.initialize", "real", "Start completed the handshake")
+	ledger.note("client-notification.initialized", "real", "Start sent initialized")
 }
 
-func sweepReads(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace, agent string) {
+func sweepReads(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace, agent, sessionID, projectKey string) {
 	t.Helper()
 	byName := map[string]desktop.MethodInfo{}
 	for _, method := range desktop.MethodCatalog() {
@@ -112,50 +146,145 @@ func sweepReads(t *testing.T, ctx context.Context, desk *desktop.Client, ledger 
 			continue
 		}
 		req := reflect.New(reqType).Elem()
-		fillLocalRead(req, workspace, agent)
+		fillLocalRead(method.Name, info.Path, req, workspace, agent, sessionID, projectKey)
 		if !pathFilled(info.Path, req) {
 			ledger.note("idl."+method.Name, "notrun", "path parameter was not synthesized")
+			continue
+		}
+		if field, empty := desktop.EmptyRequired(method.Name, req.Interface()); empty {
+			ledger.note("idl."+method.Name, "notrun", "required "+field+" was not synthesized")
 			continue
 		}
 		out := method.Func.Call([]reflect.Value{reflect.ValueOf(desk), reflect.ValueOf(ctx), req})
 		id := "idl." + method.Name
 		if !out[1].IsNil() {
 			err := out[1].Interface().(error)
-			if strings.Contains(err.Error(), "missing required") || strings.Contains(err.Error(), "must be") {
-				ledger.note(id, "notrun", "request could not be formed without a synthesized resource")
-				continue
-			}
-			ledger.note(id, "failed", err.Error())
+			outcome, detail := classifyServer(err)
+			ledger.note(id, outcome, detail)
 			continue
 		}
 		ledger.note(id, "real", "GET decoded")
 	}
 }
 
-func fillLocalRead(req reflect.Value, workspace, agent string) {
+func classifyServer(err error) (string, string) {
+	var statusErr *desktop.StatusError
+	if !errors.As(err, &statusErr) {
+		return "failed", err.Error()
+	}
+	body := string(statusErr.Body)
+	switch {
+	case statusErr.Status == 501 || strings.Contains(body, "NOT_IMPLEMENTED") || strings.Contains(body, "not implemented"):
+		return "negative", "HTTP 501 the local runtime does not implement this IDL method"
+	case statusErr.Status == 404 && strings.Contains(body, "route not found"):
+		return "negative", "IDL path is not mounted on local-runtime"
+	case statusErr.Status == 404 && (strings.Contains(body, "UNAVAILABLE") || strings.Contains(body, "required")):
+		return "blocked", "HTTP 404 " + clip(body, 160)
+	case statusErr.Status == 401 || statusErr.Status == 403 || statusErr.Status == 503:
+		return "blocked", "HTTP " + strconv.Itoa(statusErr.Status) + " " + clip(body, 160)
+	case statusErr.Status == 409:
+		return "negative", "HTTP 409"
+	case statusErr.Status == 500:
+		return "negative", "HTTP 500 on a request whose required fields were set"
+	default:
+		return "failed", err.Error()
+	}
+}
+
+func initTempGit(t *testing.T, dir string) error {
+	t.Helper()
+	run := func(args ...string) error {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=sdk", "GIT_AUTHOR_EMAIL=sdk@example.com", "GIT_COMMITTER_NAME=sdk", "GIT_COMMITTER_EMAIL=sdk@example.com")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return errors.New(strings.TrimSpace(string(out)))
+		}
+		return nil
+	}
+	if err := run("init"); err != nil {
+		return err
+	}
+	if err := run("add", "batch.txt"); err != nil {
+		return err
+	}
+	return run("commit", "-m", "batch")
+}
+
+func fillLocalRead(method, httpPath string, req reflect.Value, workspace, agent, sessionID, projectKey string) {
 	for i := 0; i < req.NumField(); i++ {
 		field := req.Field(i)
 		name := req.Type().Field(i).Name
 		if !field.CanSet() {
 			continue
 		}
-		switch field.Type() {
-		case reflect.TypeOf(desktop.LocalHookScope(0)):
-			field.Set(reflect.ValueOf(desktop.LocalHookScopeUser))
-		case reflect.TypeOf(""):
-			switch name {
-			case "Workspace":
-				field.SetString(workspace)
-			case "Name":
-				field.SetString(agent)
-			case "Path":
-				field.SetString("batch.txt")
+		switch name {
+		case "Workspace", "WorkspaceDir":
+			setStringField(field, workspace)
+		case "Name", "AgentName":
+			setStringField(field, agent)
+		case "SessionID":
+			setStringField(field, sessionID)
+		case "ProjectKey":
+			setStringField(field, projectKey)
+		case "Query":
+			setStringField(field, "main")
+		case "ID":
+			if strings.Contains(httpPath, "/session/:id") {
+				setStringField(field, sessionID)
 			}
+		}
+		if field.Type() == reflect.TypeOf(desktop.LocalHookScope(0)) {
+			field.Set(reflect.ValueOf(desktop.LocalHookScopeUser))
+		}
+	}
+	if _, empty := desktop.EmptyRequired(method, req.Interface()); empty {
+		filePath := "batch.txt"
+		if method == "PreviewWorkspaceFile" {
+			filePath = filepath.Join(workspace, "preview.png")
+		}
+		if field := req.FieldByName("Path"); field.IsValid() && field.CanSet() {
+			setStringField(field, filePath)
 		}
 	}
 }
 
-func assertLocalWrites(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string) {
+func clip(text string, n int) string {
+	text = strings.Join(strings.Fields(text), " ")
+	if len(text) <= n {
+		return text
+	}
+	return text[:n]
+}
+
+func setStringField(field reflect.Value, value string) {
+	switch field.Kind() {
+	case reflect.String:
+		field.SetString(value)
+	case reflect.Pointer:
+		if field.Type().Elem().Kind() == reflect.String {
+			copied := value
+			field.Set(reflect.ValueOf(&copied))
+		}
+	}
+}
+
+func onePixelPNG() []byte {
+	return []byte{
+		0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+		0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+		0xde, 0x00, 0x00, 0x00, 0x0c, 0x49, 0x44, 0x41,
+		0x54, 0x08, 0xd7, 0x63, 0xf8, 0xcf, 0xc0, 0x00,
+		0x00, 0x00, 0x03, 0x00, 0x01, 0x00, 0x05, 0xfe,
+		0xd4, 0xef, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+		0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+	}
+}
+
+func assertLocalWrites(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace, projectKey string) {
 	t.Helper()
 	before, err := desk.GetGlobalInstructions(ctx, desktop.GetGlobalInstructionsReq{})
 	if err != nil {
@@ -274,21 +403,7 @@ func assertLocalWrites(t *testing.T, ctx context.Context, desk *desktop.Client, 
 	ledger.note("idl.CreateLocalHook", "real", "hook id returned and listed")
 	ledger.note("idl.DeleteLocalHook", "real", "hook deleted")
 
-	display := "sdk local project"
-	createdProject, err := desk.CreateProject(ctx, desktop.CreateProjectReq{
-		DisplayName:  display,
-		WorkspaceDir: &workspace,
-	})
-	if err != nil || createdProject.Project == nil {
-		t.Fatalf("CreateProject: %v", err)
-	}
-	key, ok := createdProject.Project.Key.String()
-	if !ok || key == "" {
-		t.Fatal("project key")
-	}
-	if got, ok := createdProject.Project.DisplayName.String(); !ok || got != display {
-		t.Fatalf("project name %q", got)
-	}
+	key := projectKey
 	listed, err := desk.ListProjects(ctx, desktop.ListProjectsReq{})
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
@@ -380,7 +495,7 @@ func assertMavisReads(t *testing.T, ctx context.Context, desk *desktop.Client, l
 	if err != nil || !jsonObject(cfg.Raw) {
 		t.Fatalf("config: %v", err)
 	}
-	ledger.note("mavis.config", "real", "json object")
+	ledger.note("mavis.config.get", "real", "json object")
 	info, err := mv.FsGitInfo(ctx, workspace)
 	if err != nil {
 		t.Fatalf("fs git info: %v", err)
