@@ -35,7 +35,7 @@ func assertLocalCRUD(t *testing.T, ctx context.Context, client *Client, desk *de
 	assertRoundTrips(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
 	assertTopo(t, ctx, client, desk, ledger, workspace, agent, sessionID)
 	assertLocalExtras(t, ctx, desk, ledger, workspace, agent, projectKey)
-	assertExhaustLocal(t, ctx, desk, ledger, workspace, agent)
+	assertExhaustLocal(t, ctx, desk, ledger, workspace, agent, sessionID)
 }
 
 func assertEcho(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {

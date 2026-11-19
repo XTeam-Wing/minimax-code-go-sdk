@@ -16,10 +16,16 @@ import (
 	"github.com/XTeam-Wing/minimax-code-go-sdk/desktop"
 )
 
-func assertExhaustLocal(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace, agent string) {
+func assertExhaustLocal(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace, agent, sessionID string) {
 	t.Helper()
 	assertGitStageRoundTrip(t, ctx, desk, ledger, workspace)
+	assertManagedWorktrees(t, ctx, desk, ledger, workspace)
+	assertEchoMCP(t, ctx, desk, ledger)
+	assertSandboxWriteBack(t, ctx, desk, ledger)
 	assertReviewCommits(t, ctx, desk, ledger, workspace)
+	assertCanvasFile(t, ctx, desk, ledger, workspace, agent)
+	assertAgentImportRead(t, ctx, desk, ledger)
+	assertQuestionnaire(t, ctx, desk, ledger, agent, sessionID)
 	assertFileWatchAndSearch(t, ctx, desk, ledger, workspace)
 	assertOpenAndReveal(t, ctx, desk, ledger, workspace)
 	assertBuiltinAgentRead(t, ctx, desk, ledger, agent)
@@ -466,6 +472,387 @@ func assertContextCaptureToggle(t *testing.T, ctx context.Context, desk *desktop
 	ledger.note("idl.PutLlmContextCapture", "real", "capture_enabled true then false")
 }
 
+func assertEchoMCP(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
+	t.Helper()
+	script, err := filepath.Abs(filepath.Join("testdata", "mcp_echo.py"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := json.Marshal(map[string]any{
+		"type":    "stdio",
+		"command": "python3",
+		"args":    []string{script},
+		"enabled": true,
+		"tools": []map[string]any{{
+			"name":        "echo",
+			"description": "Return the given text unchanged.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"text": map[string]any{"type": "string"},
+				},
+				"required": []string{"text"},
+			},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	const serverName = "sdkecho"
+	configJSON := string(config)
+	upserted, err := desk.UpsertLocalMcpRuntimeServer(ctx, desktop.UpsertLocalMCPRuntimeServerReq{ServerName: serverName, ConfigJSON: &configJSON})
+	if err != nil || !scalarTrue(&upserted.Ok) || upserted.Server == nil {
+		t.Fatalf("UpsertLocalMcpRuntimeServer: %v", err)
+	}
+	gotName, ok := upserted.Server.Name.String()
+	if !ok || gotName != serverName {
+		t.Fatalf("runtime server %q", gotName)
+	}
+	listed, err := desk.ListLocalMcpRuntimeTools(ctx, desktop.ListLocalMCPRuntimeToolsReq{ServerName: serverName})
+	if err != nil {
+		t.Fatalf("ListLocalMcpRuntimeTools: %v", err)
+	}
+	if !runtimeToolNamed(listed.Tools, "echo") {
+		t.Fatalf("echo tool missing: %#v", listed.Tools)
+	}
+	fetched, err := desk.GetLocalMcpRuntimeTool(ctx, desktop.GetLocalMCPRuntimeToolReq{ServerName: serverName, ToolName: "echo"})
+	if err != nil || fetched.Tool == nil {
+		t.Fatalf("GetLocalMcpRuntimeTool: %v", err)
+	}
+	toolName, ok := fetched.Tool.Name.String()
+	if !ok || toolName != "echo" || !strings.Contains(string(fetched.Tool.InputSchemaJSON), "text") {
+		t.Fatalf("tool %#v", fetched.Tool)
+	}
+	arguments := `{"text":"hello-echo"}`
+	called, err := desk.CallLocalMcpRuntimeTool(ctx, desktop.CallLocalMCPRuntimeToolReq{Server: serverName, Tool: "echo", ArgumentsJSON: &arguments})
+	if err != nil {
+		t.Fatalf("CallLocalMcpRuntimeTool: %v", err)
+	}
+	if !strings.Contains(string(called.ResultJSON), "sdk-echo-marker:hello-echo") || strings.Contains(string(called.ResultJSON), `"isError":true`) {
+		t.Fatalf("echo result %s", called.ResultJSON)
+	}
+	ledger.note("idl.UpsertLocalMcpRuntimeServer", "real", "server sdkecho command python3 testdata/mcp_echo.py")
+	ledger.note("idl.ListLocalMcpRuntimeTools", "real", "tool echo")
+	ledger.note("idl.GetLocalMcpRuntimeTool", "real", "echo input schema contains text")
+	ledger.note("idl.CallLocalMcpRuntimeTool", "real", "result contains sdk-echo-marker:hello-echo")
+}
+
+func runtimeToolNamed(tools []desktop.LocalMCPRuntimeTool, name string) bool {
+	for _, tool := range tools {
+		got, ok := tool.Name.String()
+		if ok && got == name {
+			return true
+		}
+	}
+	return false
+}
+
+func assertManagedWorktrees(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string) {
+	t.Helper()
+	one := createCleanWorktree(t, ctx, desk, workspace, "sdk-wt-managed", "sdk-wt-managed")
+	removed, err := desk.RemoveManagedWorkspaceGitWorktree(ctx, desktop.RemoveWorktreeReq{Workspace: workspace, WorktreeDir: one})
+	if err != nil || !scalarTrue(removed.Success) {
+		t.Fatalf("RemoveManagedWorkspaceGitWorktree: %v %s", err, scalarText(removed.Error))
+	}
+	if worktreeListed(t, ctx, desk, workspace, one) {
+		t.Fatalf("managed worktree %s still listed", one)
+	}
+	batch := createCleanWorktree(t, ctx, desk, workspace, "sdk-wt-batch", "sdk-wt-batch")
+	batchRemoved, err := desk.RemoveManagedWorkspaceGitWorktreesBatch(ctx, desktop.RemoveManagedWorktreesBatchReq{
+		Items: []desktop.RemoveWorktreeReq{{Workspace: workspace, WorktreeDir: batch}},
+	})
+	if err != nil || !scalarTrue(&batchRemoved.Success) || len(batchRemoved.FailedItems) != 0 {
+		t.Fatalf("RemoveManagedWorkspaceGitWorktreesBatch: %v failed %#v", err, batchRemoved.FailedItems)
+	}
+	if !scalarListHas(batchRemoved.RemovedPaths, batch) {
+		t.Fatalf("removed paths %s", batchRemoved.RemovedPaths)
+	}
+	if worktreeListed(t, ctx, desk, workspace, batch) {
+		t.Fatalf("batch worktree %s still listed", batch)
+	}
+	ledger.note("idl.RemoveManagedWorkspaceGitWorktree", "real", "fresh worktree absent after remove")
+	ledger.note("idl.RemoveManagedWorkspaceGitWorktreesBatch", "real", "fresh worktree absent after batch remove")
+}
+
+func createCleanWorktree(t *testing.T, ctx context.Context, desk *desktop.Client, workspace, branch, dirName string) string {
+	t.Helper()
+	created, err := desk.CreateWorkspaceGitWorktree(ctx, desktop.CreateWorktreeReq{
+		Workspace: workspace,
+		Options:   &desktop.CreateWorktreeOptions{Branch: &branch, DirName: &dirName, Base: crudPtr("master")},
+	})
+	if err != nil || !scalarTrue(created.Success) || created.WorktreeDir == nil {
+		t.Fatalf("CreateWorkspaceGitWorktree %s: %v %s", branch, err, scalarText(created.Error))
+	}
+	dir, ok := created.WorktreeDir.String()
+	if !ok || dir == "" {
+		t.Fatal("worktree dir")
+	}
+	return dir
+}
+
+func worktreeListed(t *testing.T, ctx context.Context, desk *desktop.Client, workspace, dir string) bool {
+	t.Helper()
+	listed, err := desk.ListWorkspaceGitWorktrees(ctx, desktop.ListWorktreesReq{Workspace: workspace})
+	if err != nil {
+		t.Fatalf("list worktrees: %v", err)
+	}
+	for _, item := range listed.Worktrees {
+		if item.Path == nil {
+			continue
+		}
+		path, ok := item.Path.String()
+		if ok && path == dir {
+			return true
+		}
+	}
+	return false
+}
+
+func assertSandboxWriteBack(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
+	t.Helper()
+	status, err := desk.GetSandboxStatus(ctx, desktop.GetSandboxStatusReq{})
+	if err != nil || status.Status == nil {
+		t.Fatalf("GetSandboxStatus: %v", err)
+	}
+	current := status.Status
+	filesystem, okFS := scalarNumber(current.FilesystemMode)
+	network, okNet := scalarNumber(current.NetworkMode)
+	local, okLocal := scalarNumber(current.LocalAccess)
+	state, okState := current.State.Float64()
+	if !okFS || !okNet || !okLocal || !okState {
+		ledger.note("idl.PutSandboxConfig", "notrun", "status did not return numeric filesystem_mode, network_mode, local_access, and state")
+		return
+	}
+	if scalarCount(current.DenyReadRuleCount) > 0 || scalarCount(current.DeniedDomainRuleCount) > 0 {
+		ledger.note("idl.PutSandboxConfig", "notrun", "status has deny rules and the put body would replace them with an empty list")
+		return
+	}
+	var enabled bool
+	switch int(state) {
+	case 1:
+		enabled = false
+	case 3:
+		enabled = true
+	default:
+		ledger.note("idl.PutSandboxConfig", "notrun", "state is not DISABLED 1 or READY 3, so enabled was not chosen")
+		return
+	}
+	if filesystem < 1 || filesystem > 4 || (network != 1 && network != 2) || (local != 1 && local != 2) {
+		t.Fatalf("sandbox modes filesystem %v network %v local %v", filesystem, network, local)
+	}
+	put, err := desk.PutSandboxConfig(ctx, desktop.PutSandboxConfigReq{Config: &desktop.SandboxConfig{
+		Enabled: enabled,
+		Filesystem: &desktop.SandboxFilesystemConfig{
+			Policy:    &desktop.SandboxFilesystemPolicy{Mode: numScalar(int(filesystem))},
+			DenyRead:  []desktop.Scalar{},
+			DenyWrite: []desktop.Scalar{},
+		},
+		Network: &desktop.SandboxNetworkConfig{
+			Policy:        &desktop.SandboxNetworkPolicy{Mode: numScalar(int(network))},
+			DeniedDomains: []desktop.Scalar{},
+		},
+		LocalAccess: desktop.SandboxLocalAccess(local),
+	}})
+	if err != nil || put.Result == nil {
+		t.Fatalf("PutSandboxConfig: %v", err)
+	}
+	again, err := desk.GetSandboxStatus(ctx, desktop.GetSandboxStatusReq{})
+	if err != nil || again.Status == nil {
+		t.Fatalf("sandbox reread: %v", err)
+	}
+	gotFS, _ := scalarNumber(again.Status.FilesystemMode)
+	gotNet, _ := scalarNumber(again.Status.NetworkMode)
+	gotLocal, _ := scalarNumber(again.Status.LocalAccess)
+	gotState, _ := again.Status.State.Float64()
+	if gotFS != filesystem || gotNet != network || gotLocal != local || gotState != state {
+		t.Fatalf("sandbox changed filesystem %v network %v local %v state %v", gotFS, gotNet, gotLocal, gotState)
+	}
+	ledger.note("idl.GetSandboxStatus", "real", "modes reread after put")
+	ledger.note("idl.PutSandboxConfig", "real", "enabled followed state and filesystem, network, and local access stayed the same")
+}
+
+func assertCanvasFile(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace, agent string) {
+	t.Helper()
+	title := "canvas session"
+	created, err := desk.CreateSession(ctx, desktop.CreateSessionReq{Name: agent, Title: &title, WorkspaceDir: &workspace})
+	if err != nil || created.SessionID == nil {
+		t.Fatalf("canvas session: %v", err)
+	}
+	sessionID, ok := created.SessionID.String()
+	if !ok || sessionID == "" {
+		t.Fatal("canvas session id")
+	}
+	relative := jsonScalar("batch.txt")
+	prepared, err := desk.PrepareCanvasFiles(ctx, desktop.PrepareCanvasFilesReq{
+		SessionID: sessionID,
+		Targets: []desktop.CanvasFileTargetV1{{
+			ID:           jsonScalar("sdk-file"),
+			Kind:         jsonScalar("workspace"),
+			RelativePath: &relative,
+		}},
+	})
+	if err != nil {
+		t.Fatalf("PrepareCanvasFiles: %v", err)
+	}
+	if len(prepared.Files) != 1 {
+		t.Fatalf("prepared files %#v", prepared.Files)
+	}
+	gotPath, ok := prepared.Files[0].RelativePath.String()
+	if !ok || gotPath != "batch.txt" {
+		t.Fatalf("prepared path %q", gotPath)
+	}
+	applied, err := desk.ApplyCanvasOperation(ctx, desktop.ApplyCanvasOperationReq{
+		SessionID: sessionID,
+		Operation: &desktop.CanvasOperationV1{
+			SchemaVersion: 1,
+			OperationID:   "sdk-canvas-op",
+			Mutations: []desktop.CanvasMutationV1{{
+				Kind:         jsonScalar("add_file"),
+				NodeID:       jsonScalar("sdk-node"),
+				RelativePath: &relative,
+				Layout: &desktop.CanvasLayoutV1{
+					X: numScalar(0), Y: numScalar(0), Width: numScalar(120), Height: numScalar(80), ZIndex: numScalar(1),
+				},
+			}},
+		},
+	})
+	if err != nil || applied.Document == nil {
+		t.Fatalf("ApplyCanvasOperation: %v", err)
+	}
+	opID, ok := applied.OperationID.String()
+	if !ok || opID != "sdk-canvas-op" || !canvasHasPath(applied.Document.Nodes, "batch.txt") {
+		t.Fatalf("canvas operation %q nodes %#v", opID, applied.Document.Nodes)
+	}
+	ledger.note("idl.PrepareCanvasFiles", "real", "workspace target batch.txt")
+	ledger.note("idl.ApplyCanvasOperation", "real", "add_file node batch.txt operation sdk-canvas-op")
+}
+
+func canvasHasPath(nodes []desktop.CanvasFileNodeV1, path string) bool {
+	for _, node := range nodes {
+		got, ok := node.RelativePath.String()
+		if ok && got == path {
+			return true
+		}
+	}
+	return false
+}
+
+func assertAgentImportRead(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
+	t.Helper()
+	claude := "---\nname: sdkclaude\ndescription: local claude import\n---\nReply with the marker sdk-claude.\n"
+	readClaude, err := desk.ReadClaudeCodeAgentImport(ctx, desktop.ReadAgentImportReq{Content: claude})
+	if err != nil || readClaude.Preview == nil {
+		t.Fatalf("ReadClaudeCodeAgentImport: %v", err)
+	}
+	name, ok := readClaude.Preview.ProposedName.String()
+	if !ok || name != "sdkclaude" {
+		t.Fatalf("claude proposed name %q", name)
+	}
+	codex := "name = \"sdkcodex\"\ndescription = \"local codex import\"\ndeveloper_instructions = \"Reply with the marker sdk-codex.\"\n"
+	readCodex, err := desk.ReadCodexAgentImport(ctx, desktop.ReadAgentImportReq{Content: codex})
+	if err != nil || readCodex.Preview == nil {
+		t.Fatalf("ReadCodexAgentImport: %v", err)
+	}
+	name, ok = readCodex.Preview.ProposedName.String()
+	if !ok || name != "sdkcodex" {
+		t.Fatalf("codex proposed name %q", name)
+	}
+	ledger.note("idl.ReadClaudeCodeAgentImport", "real", "proposed name sdkclaude")
+	ledger.note("idl.ReadCodexAgentImport", "real", "proposed name sdkcodex")
+}
+
+func assertQuestionnaire(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent, sessionID string) {
+	t.Helper()
+	stepID := jsonScalar("step-1")
+	optionID := jsonScalar("yes")
+	label := jsonScalar("Yes")
+	question := jsonScalar("Pick one.")
+	begun, err := desk.BeginQuestionnaire(ctx, desktop.BeginQuestionnaireReq{
+		SessionID: sessionID,
+		AgentName: &agent,
+		ToolInput: &desktop.AskUserToolInput{
+			Title: crudPtr("sdk question"),
+			Steps: []desktop.AskUserToolStepInput{{
+				ID:       &stepID,
+				Question: question,
+				Options:  []desktop.AskUserToolOptionInput{{ID: &optionID, Label: label}},
+			}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("BeginQuestionnaire: %v", err)
+	}
+	requestID, ok := begun.RequestID.String()
+	schema, schemaOK := begun.SchemaVersion.Float64()
+	steps, stepsOK := begun.StepCount.Float64()
+	if !ok || requestID == "" || !schemaOK || !stepsOK || steps != 1 {
+		t.Fatalf("questionnaire %#v", begun)
+	}
+	fetched, err := desk.GetQuestionnaire(ctx, desktop.GetQuestionnaireReq{Name: agent, RequestID: requestID})
+	if err != nil || fetched.Request == nil || len(fetched.Request.Steps) == 0 {
+		t.Fatalf("GetQuestionnaire: %v", err)
+	}
+	gotQuestion, ok := fetched.Request.Steps[0].Question.String()
+	if !ok || gotQuestion != "Pick one." {
+		t.Fatalf("question %q", gotQuestion)
+	}
+	replied, err := desk.ReplyQuestionnaire(ctx, desktop.ReplyQuestionnaireReq{
+		Name:          agent,
+		RequestID:     requestID,
+		SchemaVersion: desktop.Number(schema),
+		Answers: []desktop.QuestionnaireReplyAnswer{{
+			StepID:            stepID,
+			SelectedOptionIds: []desktop.Scalar{optionID},
+		}},
+	})
+	ledger.note("idl.BeginQuestionnaire", "real", "request id returned step count 1")
+	ledger.note("idl.GetQuestionnaire", "real", "question Pick one.")
+	if err == nil && scalarTrue(&replied.Ok) {
+		gotID, idOK := replied.RequestID.String()
+		if !idOK || gotID != requestID {
+			t.Fatalf("reply request %q", gotID)
+		}
+		ledger.note("idl.ReplyQuestionnaire", "real", "request "+requestID+" option yes")
+		return
+	}
+	var statusErr *desktop.StatusError
+	if !errors.As(err, &statusErr) || !strings.Contains(string(statusErr.Body), "QUESTIONNAIRE_CONTINUATION_NOT_STARTED") {
+		t.Fatalf("ReplyQuestionnaire: %v", err)
+	}
+	after, err := desk.GetQuestionnaire(ctx, desktop.GetQuestionnaireReq{Name: agent, RequestID: requestID})
+	if err != nil || after.AnsweredAt == nil {
+		t.Fatalf("answered questionnaire: %v", err)
+	}
+	answeredAt, ok := after.AnsweredAt.Float64()
+	if !ok || answeredAt <= 0 {
+		t.Fatalf("answered_at %#v", after.AnsweredAt)
+	}
+	ledger.note("idl.ReplyQuestionnaire", "negative", "HTTP 503 QUESTIONNAIRE_CONTINUATION_NOT_STARTED. The answer was stored and GetQuestionnaire answered_at is set. Continuation was not started because runtime auth is pending")
+}
+
+func scalarNumber(value *desktop.Scalar) (float64, bool) {
+	if value == nil {
+		return 0, false
+	}
+	return value.Float64()
+}
+
+func scalarCount(value *desktop.Scalar) float64 {
+	n, ok := scalarNumber(value)
+	if !ok {
+		return 0
+	}
+	return n
+}
+
+func numScalar(value int) desktop.Scalar {
+	body, err := json.Marshal(value)
+	if err != nil {
+		return nil
+	}
+	return desktop.Scalar(body)
+}
+
 func markExhaustedDependencies(ledger *coverageLedger) {
 	blockRoot(ledger, "idl.ListIdeApps", []string{"idl.OpenWorkspaceFileInIde"}, "ListIdeApps is HTTP 501 on local-runtime, so there is no ide id")
 	blockRoot(ledger, "idl.CreateSkill", []string{"idl.ListSkillFiles", "idl.GetSkillFile"}, "CreateSkill is refused by content review, so there is no disposable skill to read")
@@ -501,8 +888,8 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 	ledger.note("idl.SuggestCommitMessage", "blocked", "commit-message generation is a model turn and was not called")
 	ledger.note("idl.BindSessionFileSyncOwner", "blocked", "needs an account id. No account id was invented")
 	ledger.note("idl.ArchiveProjectSessions", "notrun", "archives sessions in the project. Session lifecycle is covered by the parent tester and was not repeated")
-	for _, id := range []string{"idl.PrepareCanvasFiles", "idl.ApplyCanvasOperation", "idl.RemoveCanvasImageBackground", "idl.EnhanceCanvasImage"} {
-		ledger.note(id, "notrun", "canvas mutation kind and image node id were not recovered from 0.7.8. Image edit was not called")
+	for _, id := range []string{"idl.RemoveCanvasImageBackground", "idl.EnhanceCanvasImage"} {
+		ledger.note(id, "notrun", "the handlers call image tools generatedBy canvas-remove-background and canvas-enhance-image. Billing was not proven absent, so they were not called")
 	}
 	for _, id := range []string{
 		"idl.ReportSkillEvolveSignal", "idl.CancelSkillEvolveSignal", "idl.ReportSkillEvolveProposal", "idl.CancelSkillEvolveProposal",
@@ -512,16 +899,11 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 		ledger.note(id, "notrun", "skill-evolve body_json and install URL were not recovered. No invented body or external URL was sent")
 	}
 	for _, id := range []string{
-		"idl.ReplyQuestionnaire", "idl.DismissQuestionnaire", "idl.GetQuestionnaire", "idl.RecordPluginRecommendationDecline",
-		"idl.ReplyQuestion", "idl.RejectQuestion", "idl.BeginQuestionnaire", "idl.ReplaceRootSession", "idl.RequestRotation", "idl.RequestCompaction",
-		"idl.CreateImportedAgent", "idl.ReadClaudeCodeAgentImport", "idl.ReadCodexAgentImport", "idl.CreateCron",
+		"idl.DismissQuestionnaire", "idl.RecordPluginRecommendationDecline",
+		"idl.ReplyQuestion", "idl.RejectQuestion", "idl.ReplaceRootSession", "idl.RequestRotation", "idl.RequestCompaction",
+		"idl.CreateImportedAgent", "idl.CreateCron",
 	} {
-		ledger.note(id, "notrun", "needs a live questionnaire, question, import document, or compaction turn. Builtin agent state was not modified")
-	}
-	for _, id := range []string{
-		"idl.UpsertLocalMcpRuntimeServer", "idl.GetLocalMcpRuntimeTool", "idl.CallLocalMcpRuntimeTool",
-	} {
-		ledger.note(id, "notrun", "the stdio server command true exposed no tool name, so runtime upsert and tool call were not invented")
+		ledger.note(id, "notrun", "needs a question request, compaction turn, or a new agent record. Builtin agent state was not modified and content review was not bypassed")
 	}
 	for _, id := range []string{
 		"idl.CreateUserModelProvider", "idl.UpdateUserModelProvider", "idl.DuplicateUserModelProvider", "idl.DeleteUserModelProvider",
@@ -536,11 +918,8 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 	} {
 		ledger.note(id, "notrun", "needs an extension slot, plugin, and render sequence from a running extension UI. None was created")
 	}
-	ledger.note("idl.RemoveManagedWorkspaceGitWorktree", "notrun", "the worktree created in this run was removed with RemoveWorkspaceGitWorktree; no second managed worktree was left to remove")
-	ledger.note("idl.RemoveManagedWorkspaceGitWorktreesBatch", "notrun", "no batch of managed worktrees was created")
 	ledger.note("idl.RestoreSessionWorktree", "notrun", "needs a session worktree. Session lifecycle is owned by the parent tester and was not repeated")
 	ledger.note("idl.InvalidateSessionFileSyncSources", "notrun", "QuerySessionFileSyncSources returned no source object to invalidate")
-	ledger.note("idl.PutSandboxConfig", "notrun", "GetSandboxStatus has filesystem_mode, network_mode, and local_access, but not enabled. PutSandboxConfig requires enabled, so the current config was not rewritten")
 	ledger.note("negative.unknown-desktop-path", "notrun", "covered by TestLiveSurface RawCall when that test runs; this batch did not repeat it")
 }
 
