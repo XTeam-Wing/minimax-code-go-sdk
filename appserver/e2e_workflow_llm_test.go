@@ -53,6 +53,10 @@ func TestLiveWorkflowGoFix(t *testing.T) {
 	})
 }
 
+// TestLiveWorkflowSessionContinue is phase continuation. The first turn runs
+// until the stream ends, the process stops, and a new process reads the
+// committed session before the second turn. It does not abort an open stream.
+// TestLiveWorkflowStreamCancel is the in-flight abort.
 func TestLiveWorkflowSessionContinue(t *testing.T) {
 	client, desk, sessionID, data := startWorkflowLLMParts(t)
 	workspace := client.opt.Workspace
@@ -81,8 +85,8 @@ func TestLiveWorkflowSessionContinue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if countMarker(messages, marker) != 1 {
-		t.Fatalf("marker count %d after reconnect", countMarker(messages, marker))
+	if countRoleMarker(messages, "user", content) != 1 || countMarker(messages, marker) < 1 {
+		t.Fatalf("committed history user=%d marker=%d", countRoleMarker(messages, "user", content), countMarker(messages, marker))
 	}
 	follow := "If the conversation already contains " + marker + ", reply again and do not write files."
 	if err := runTurn(ctx2, desk, sessionID, follow, scenarioSelection()); err != nil {
@@ -92,14 +96,14 @@ func TestLiveWorkflowSessionContinue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if countMarker(messages, marker) < 1 {
-		t.Fatal("history lost the first marker")
+	if countRoleMarker(messages, "user", content) != 1 || countMarker(messages, marker) < 1 {
+		t.Fatal("history lost the first turn or replayed it")
 	}
 	writeFeatureRow(t, featureRow{
 		ID:       "feature.session-continue",
 		Layer:    "feature",
 		Result:   "pass",
-		Evidence: "GetSession and GetMessages after a new process still showed the same session and the first marker, before abort",
+		Evidence: "phase continuation: first turn finished, new process, GetSession and GetMessages showed the committed marker once, then the second turn; not an in-flight abort",
 	})
 	releaseWorkflow(t, desk, sessionID)
 }
@@ -116,25 +120,46 @@ func TestLiveWorkflowStreamCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var turn desktop.AssistantTurn
 	deadline := time.Now().Add(90 * time.Second)
+	abortedOpen := false
 	for time.Now().Before(deadline) {
 		recvCtx, recvCancel := context.WithTimeout(ctx, 2*time.Second)
-		_, recvErr := stream.Recv(recvCtx)
+		frame, recvErr := stream.Recv(recvCtx)
 		recvCancel()
-		if body, readErr := os.ReadFile(target); readErr == nil && strings.TrimSpace(string(body)) == marker {
+		if recvErr == nil {
+			desktop.ObserveSessionFrame(frame, &turn)
+			if turn.SawFinished || turn.Completed {
+				t.Fatal("stream finished before abort; that is phase continuation, not an in-flight cancel")
+			}
+		}
+		body, readErr := os.ReadFile(target)
+		if readErr == nil && strings.TrimSpace(string(body)) == marker && !turn.SawFinished && !turn.Completed {
+			stream.Close()
+			abortedOpen = true
 			break
 		}
 		if recvErr != nil && !errors.Is(recvErr, context.DeadlineExceeded) {
 			if errors.Is(recvErr, io.EOF) {
-				break
+				t.Fatal("stream ended before abort")
 			}
 			t.Fatalf("stream: %v", recvErr)
 		}
 	}
-	stream.Close()
+	if !abortedOpen {
+		t.Fatal("file was not committed while the stream was still open")
+	}
 	before, err := os.ReadFile(target)
-	if err != nil || strings.TrimSpace(string(before)) != marker {
-		t.Fatalf("cancel left %q (%v); a missing file is not a cancelled write", before, err)
+	if err != nil || strings.TrimSpace(string(before)) != marker || strings.Count(string(before), marker) != 1 {
+		t.Fatalf("cancel left %q (%v)", before, err)
+	}
+	limit := desktop.Number(50)
+	committed, err := desk.GetMessages(ctx, desktop.GetMessagesReq{ID: sessionID, Limit: &limit})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if countRoleMarker(committed, "user", content) != 1 {
+		t.Fatalf("user prompt count %d after abort", countRoleMarker(committed, "user", content))
 	}
 	sum := sha256.Sum256(before)
 	follow := "Do not modify stream-once.txt. Reply with the single word done."
@@ -145,14 +170,21 @@ func TestLiveWorkflowStreamCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sha256.Sum256(after) != sum {
-		t.Fatalf("file changed after reconnect %q", after)
+	if sha256.Sum256(after) != sum || strings.Count(string(after), marker) != 1 {
+		t.Fatalf("file changed after the follow-up %q", after)
+	}
+	committed, err = desk.GetMessages(ctx, desktop.GetMessagesReq{ID: sessionID, Limit: &limit})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if countRoleMarker(committed, "user", content) != 1 {
+		t.Fatalf("user prompt replayed: count %d", countRoleMarker(committed, "user", content))
 	}
 	writeFeatureRow(t, featureRow{
 		ID:       "feature.stream-cancel",
 		Layer:    "feature",
 		Result:   "pass",
-		Evidence: "stream-once.txt hash was unchanged after the stream closed and a follow-up turn",
+		Evidence: "aborted before finished; committed user prompt once; file hash unchanged on the explicit follow-up",
 	})
 }
 
@@ -464,8 +496,21 @@ func writeGoBug(t *testing.T, dir string) {
 }
 
 func countMarker(resp desktop.GetMessagesResp, marker string) int {
+	return countRoleMarker(resp, "", marker)
+}
+
+func countRoleMarker(resp desktop.GetMessagesResp, role, marker string) int {
 	n := 0
 	for _, message := range resp.Messages {
+		if role != "" {
+			if message.Role == nil {
+				continue
+			}
+			got, ok := message.Role.String()
+			if !ok || got != role {
+				continue
+			}
+		}
 		if message.MsgContent == nil {
 			continue
 		}

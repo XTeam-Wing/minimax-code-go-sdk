@@ -131,6 +131,11 @@ func TestLiveMemorySurvivesRestart(t *testing.T) {
 	if _, err := client.Desktop().AppendMemory(ctx, desktop.AppendMemoryReq{Content: marker + "\n", AgentName: &name}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
+	topic := "sdk-topic"
+	topicOnly := "sdk-topic-only-token"
+	if _, err := client.Desktop().WriteMemoryTopic(ctx, desktop.WriteMemoryTopicReq{TopicName: topic, Description: "sdk topic", Content: topicOnly + "\n", AgentName: &name}); err != nil {
+		t.Fatalf("write topic: %v", err)
+	}
 	first := createWorkflowSession(t, ctx, client.Desktop(), "sdk-memory-a")
 	client.Close()
 
@@ -146,19 +151,59 @@ func TestLiveMemorySurvivesRestart(t *testing.T) {
 		t.Fatalf("get: %v", err)
 	}
 	text, ok := got.Content.String()
-	if !ok || !strings.Contains(text, marker) {
-		t.Fatalf("content %q", text)
+	if !ok || !strings.Contains(text, marker) || !scalarPresent(got.UpdatedAt) {
+		t.Fatalf("content %q updated %v", text, got.UpdatedAt)
 	}
 	searched, err := restarted.Desktop().SearchMemory(ctx2, desktop.SearchMemoryReq{Query: marker, AgentName: &name})
 	if err != nil || !searchHasLine(searched, marker) {
-		t.Fatalf("search: %v %#v", err, searched.Results)
+		t.Fatalf("main line search: %v %#v", err, searched.Results)
+	}
+	absent, err := restarted.Desktop().SearchMemory(ctx2, desktop.SearchMemoryReq{Query: topicOnly, AgentName: &name})
+	if err != nil {
+		t.Fatalf("main search of topic token: %v", err)
+	}
+	if searchHasLine(absent, topicOnly) {
+		t.Fatal("SearchMemory returned a topic body; that method reads the main file")
+	}
+	topicGot, err := restarted.Desktop().GetMemoryTopic(ctx2, desktop.GetMemoryTopicReq{TopicName: topic, AgentName: &name})
+	if err != nil || topicGot.Body == nil {
+		t.Fatalf("get topic: %v", err)
+	}
+	body, ok := topicGot.Body.String()
+	if !ok || !strings.Contains(body, topicOnly) {
+		t.Fatalf("topic body %q", body)
+	}
+	topics, err := restarted.Desktop().SearchMemoryTopics(ctx2, desktop.SearchMemoryTopicsReq{Keyword: topicOnly, AgentName: &name})
+	if err != nil || !topicListed(topics, topic) {
+		t.Fatalf("topic search: %v %#v", err, topics.Topics)
 	}
 	writeFeatureRow(t, featureRow{
 		ID:       "feature.memory-across-session",
 		Layer:    "feature",
 		Result:   "pass",
-		Evidence: "memory written in one process was read and searched after restart from a second session",
+		Evidence: "GetMemory kept the marker and updated_at after restart. SearchMemory hit the main-file line and returned no row for the topic-only token. SearchMemoryTopics hit the topic. An empty main search is not a Get failure and is not a search pass.",
 	})
+}
+
+func scalarPresent(value *desktop.Scalar) bool {
+	if value == nil || len(*value) == 0 {
+		return false
+	}
+	if text, ok := value.String(); ok {
+		return text != ""
+	}
+	_, ok := value.Float64()
+	return ok
+}
+
+func topicListed(resp desktop.SearchMemoryTopicsResp, name string) bool {
+	for _, topic := range resp.Topics {
+		got, ok := topic.Name.String()
+		if ok && got == name {
+			return true
+		}
+	}
+	return false
 }
 
 func selectSessionScenario(ctx context.Context, desk *desktop.Client, sessionID string) error {

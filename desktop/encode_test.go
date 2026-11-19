@@ -34,6 +34,24 @@ func TestEncodeListAgentsQuery(t *testing.T) {
 	}
 }
 
+func TestListSessionsNameIsThePathSegment(t *testing.T) {
+	spec := specByName["ListSessions"]
+	rawURL, _, _, err := encodeRequest(spec, ListSessionsReq{Name: "mavis"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rawURL, "/agent/mavis/session") {
+		t.Fatalf("url %s", rawURL)
+	}
+	emptyURL, _, _, err := encodeRequest(spec, ListSessionsReq{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(emptyURL, "/agent//session") {
+		t.Fatalf("empty name url %s", emptyURL)
+	}
+}
+
 func TestEncodeRequiredEmptyStringIsSent(t *testing.T) {
 	// The 0.7.8 binder treats only null as missing. A Go empty string is sent.
 	spec := specByName["GetSession"]
