@@ -25,9 +25,8 @@ import (
 // local_runtime_auth_pending for SendMessage even when the API-key provider
 // is configured. That flag is the process lease, not the model provider.
 //
-// One short turn still costs on the order of 17k input tokens because the
-// mavis agent context includes tools and skills. Do not run this without
-// opt-in credentials.
+// A short mavis turn includes tool and skill context and can use well over
+// ten thousand input tokens. Do not run this without opt-in credentials.
 func TestLiveModelTurn(t *testing.T) {
 	if os.Getenv("MCODE_E2E_LLM") != "1" {
 		t.Skip("set MCODE_E2E_LLM=1 to send one opt-in model turn")

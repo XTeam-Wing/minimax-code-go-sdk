@@ -139,23 +139,21 @@ mcode provider use api-key
 mcode provider test minimax_api --json
 ```
 
-Then `MCODE_E2E_LLM=1 MCODE_LLM_DATA_DIR="$MINIMAX_DATA_DIR" go test -count=1 -run TestLiveModelTurn ./appserver`. Leave `AuthMode` empty. One short "pong" prompt still used about 17k input tokens on mavis in the external run (tools and skills). Do not run it without credentials you intend to spend. GitHub Actions runs only the no-auth protocol tests.
+No-auth protocol tests, with `--auth-mode desktop` and a temporary data directory:
 
-### Results recorded against 0.7.8
+```bash
+MCODE_E2E=1 MCODE_BIN=node MCODE_LEADING=/path/to/cli.js \
+  go test -count=1 -run 'TestLiveAppServer|TestLiveUnixHealth|TestLiveSurface' ./appserver
+```
 
-Host: Linux 6.12, glibc 2.39, Node v22.23.4, Go 1.22.2.
+Model scenarios, only after the API key is stored in an isolated data directory. Leave `AuthMode` empty. `CreateGoal` starts a model turn. A subagent is not counted unless `subagent.execution` reports `started` and `GetSession` reads the child.
 
-| Check | Result |
-| --- | --- |
-| `npm install` of the pinned tarball, postinstall SQLite check | passed (`[MCode] Native SQLite check passed.`) |
-| `go test ./...` | passed |
-| `go test -race ./...` | passed |
-| `GOOS=windows GOARCH=amd64` test compile and `GOOS=windows GOARCH=arm64` example build | passed |
-| Live stdio, no model turn | passed in 4.99s on this workspace. Server **0.7.8**, protocol **1**, auth **desktop**. `ListAgents` returned 5. `CreateSession` + `AbortSession` succeeded for `mavis`. `GetEcho` = `get: go-sdk`. `Ping` = `pong: ping`. `GET /mavis/health` = `status=ok runtime=local-runtime`. `SubscribeGlobalEvents` delivered `kind=heartbeat` with no `type`, then closed. `GET /minimax-desktop/api/v1/does-not-exist` returned **404**. Command included `--auth-mode desktop`. This run did not call `SendMessage`. |
-| Live unix, no model turn | passed in 1.86s. `/readyz` and `/healthz` ok (version 0.7.8, protocol 1, auth `desktop`) and `ListAgents`. The socket directory must be mode `0700`. |
-| External API-key model turn | Not run in this workspace and not run by GitHub Actions. An external consumer of commit `869b4ba` (`v0.0.0-20261119103415-869b4ba56f53`) on 2026-11-19 18:47 Asia/Shanghai omitted `AuthMode`, advertised auth mode `remote-oauth`, and completed `minimax` / `MiniMax-M3.1-Flash`. The saved live result's naive text walker concatenated the prompt and `pong`. Offline correction of that same turn, with `live_rerun: false`, recovered assistant text `pong`, `output_tokens` 3, and `input_tokens` 17248. Completion was the recorded stream events `finished` and `session_status` plus ledger `stopReason=stop`. Cleanup was `aborted: true` and abort HTTP 200. Raw `SessionStreamFrameView` bytes were not saved; the fixture under `desktop/testdata/live-2026-11-19-flash-pong` is a reconstructed 0.7.8 shape, not a wire replay. The same consumer at 18:46 with `AuthMode=desktop` got HTTP 503 `local_runtime_auth_pending` on `SendMessage` after `provider test minimax_api` had already succeeded. |
+```bash
+MCODE_E2E_LLM=1 MCODE_LLM_DATA_DIR="$MINIMAX_DATA_DIR" \
+  go test -count=1 -run 'TestLiveModelTurn|TestLiveGoalAndSubagent' ./appserver
+```
 
-No login, no message send, and no account mutation were performed.
+`TestCapabilityGate` refuses a complete verdict while rows are still `fakecontract` or `blocked`. GitHub Actions runs the no-auth tests only.
 
 ## License
 

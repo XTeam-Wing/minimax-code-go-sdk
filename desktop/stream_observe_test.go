@@ -30,6 +30,28 @@ func TestAssistantTextIgnoresUserPrompt(t *testing.T) {
 	}
 }
 
+func TestCommittedMessageReplacesChunkText(t *testing.T) {
+	var turn AssistantTurn
+	chunk := scalarPtr(mustScalar(t, `{"type":6,"agent_message_chunk":{"role":"assistant","msg_content":"pong"}}`))
+	committed := scalarPtr(mustScalar(t, `{"type":2,"agent_message":{"role":"assistant","msg_type":1,"msg_content":"pong","finish_reason":"stop"}}`))
+	status := scalarPtr(mustScalar(t, `{"type":"session_status","session_status":{"type":"finished"}}`))
+	ObserveSessionFrame(SessionStreamFrameView{DataJSON: chunk}, &turn)
+	ObserveSessionFrame(SessionStreamFrameView{DataJSON: committed}, &turn)
+	ObserveSessionFrame(SessionStreamFrameView{DataJSON: status}, &turn)
+	if turn.Text != "pong" {
+		t.Fatalf("text %q", turn.Text)
+	}
+	if turn.FinishReason != "stop" || turn.SessionStatus != "finished" || !turn.SawSessionStatus {
+		t.Fatalf("%+v", turn)
+	}
+	// A later chunk must not be appended onto the committed message.
+	again := scalarPtr(mustScalar(t, `{"type":6,"agent_message_chunk":{"role":"assistant","msg_content":"pong"}}`))
+	ObserveSessionFrame(SessionStreamFrameView{DataJSON: again}, &turn)
+	if turn.Text != "pong" {
+		t.Fatalf("doubled text %q", turn.Text)
+	}
+}
+
 func TestAssistantChunkIsNotTheUserString(t *testing.T) {
 	var turn AssistantTurn
 	frame := scalarPtr(mustScalar(t, `"{\"agent_message\":{\"role\":\"user\",\"msg_content\":\"pong\"},\"agent_message_chunk\":{\"role\":\"assistant\",\"msg_content\":\"hello\",\"finish\":true}}"`))

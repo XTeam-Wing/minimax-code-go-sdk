@@ -45,20 +45,11 @@ _, err = client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 握手顺序是固定的：先 `initialize`（`protocolVersion` 必须是 1，DesktopService 传输版本必须是 2），再发 `initialized` 通知。SDK 会做完这两步再把 `Client` 交给你。
 
-## 已在 0.7.8 上跑通的只读路径
+## 测试怎么跑
 
-环境：Linux、glibc 2.39、Node v22.23.4、Go 1.22.2。临时 data dir 和 workspace，`--auth-mode desktop`。没有登录，没有发消息，没有改账号。这条只读路径不能当成 API key 推理的配置。无界面 API key 要先在隔离的 `MINIMAX_DATA_DIR` 里执行 `provider set-minimax-key --api-key-env MCODE_PROVIDER_API_KEY` 和 `provider use api-key`，启动 SDK 时不要设置 `AuthMode`。
+不带模型的官方进程测试需要临时 data dir 和 workspace，并显式使用 `--auth-mode desktop`。它不会调用 `SendMessage`。`CreateGoal` 在这个模式下会返回 503 `local_runtime_auth_pending`，这只说明目标没有开始执行。
 
-外部消费者在 2026-11-19 18:47（东八区）用提交 `869b4ba` 省略 `AuthMode`，完成了 `MiniMax-M3.1-Flash` 的一次调用。现场记录器把用户提示和 `pong` 拼在了一起，而且没有保存原始 `SessionStreamFrameView`。事后用同一次会话账本和已保存的事件、用量记录，按 0.7.8 的形状重建了最小帧（`live_rerun: false`），助手文本是 `pong`，`output_tokens` 3，`input_tokens` 17248。完成依据是流里的 `finished`、`session_status` 和账本 `stopReason=stop`，清理依据是 `aborted: true` 与 abort HTTP 200。这不是第二次推理，也不是逐字节的线上回放。本仓库的测试进程没有重跑这次付费调用。短提示也会带上 mavis 的工具和技能上下文，大约 1.7 万 input tokens。没有明确要花费额度时不要跑 `MCODE_E2E_LLM=1`。设置 `MCODE_E2E_FRAMES_OUT` 才会把脱敏后的原始帧写到文件。
-
-- 服务版本 `0.7.8`，协议 `1`
-- `ListAgents` 返回 5 个 agent
-- 对 agent `mavis` 调用 `CreateSession` 后立刻 `AbortSession` 成功
-- `GetEcho` 返回 `get: go-sdk`
-- `Ping` 返回 `pong: ping`
-- `GET /mavis/health` 返回 `status=ok`、`runtime=local-runtime`
-- 打开 `SubscribeGlobalEvents` 后取消
-- Unix 监听上 `GET /readyz` 与 `GET /healthz` 为 `ok`（目录权限必须是 `0700`）
+无界面 API key 要先在隔离的 `MINIMAX_DATA_DIR` 里执行 `provider set-minimax-key --api-key-env MCODE_PROVIDER_API_KEY` 和 `provider use api-key`，启动 SDK 时不要设置 `AuthMode`。带模型的场景是 `TestLiveModelTurn` 和 `TestLiveGoalAndSubagent`，只有 `MCODE_E2E_LLM=1` 才会跑。目标创建会启动一轮模型。子代理必须看到 `subagent.execution` 且子会话能被 `GetSession` 读到。提示里写了子代理不算成功。
 
 ## 审批和重连
 

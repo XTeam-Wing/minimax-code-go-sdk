@@ -70,7 +70,7 @@ Request fields come from the IDL bindings:
 
 `AuthMode` is the process flag `--auth-mode`. Leave it empty for a headless API-key data directory. The CLI then reports `remote-oauth`, and `SendMessage` can use a provider selected with `mcode provider use api-key`. `AuthMode: "desktop"` asks for a Desktop authentication lease. Without that lease, `SendMessage` returns HTTP 503 `local_runtime_auth_pending` even when `provider test minimax_api` already succeeded. The flag is not the model provider.
 
-Assistant text is read from `agent_message` / `agent_message_chunk` only when `role` is `assistant`, using `msg_content` or `content[].text`. A user prompt that contains the same word is not the reply. `output_tokens` is usage, not completion and not the text. `TestLiveModelTurn` is opt-in, spends on the order of 17k input tokens for a short mavis turn, and can write redacted raw frames to `MCODE_E2E_FRAMES_OUT`. The checked-in flash/pong fixture is reconstructed from the external 2026-11-19 turn. It is not a captured wire log and not a second inference.
+Assistant text uses `msg_content` or `content[].text` only when `role` is `assistant`. A committed `agent_message` replaces earlier chunk text, so a chunk and the committed message are not concatenated. `output_tokens` is usage, not completion. `finish_reason` and `session_status` are the completion signals. `CreateGoal` starts a model turn. `send_behavior` is `queue` or `steer`. Goal status is `active`, `paused`, `complete`, `blocked`, `budget_limited`, or `usage_limited`. A subagent counts only when `subagent.execution` has status `started` and `GetSession` on the child succeeds. Opt-in model scenarios are `TestLiveModelTurn` and `TestLiveGoalAndSubagent`. They are not run without `MCODE_E2E_LLM=1`.
 
 Response objects use IDL `jsonName`s. A field whose schema says `kind: scalar` without a recovered `tsType`, or an alias whose JSON primitive was not recovered, is `desktop.Scalar`. Call `String`, `Bool`, or `Float64`. Proven aliases are named types: `PermissionReply` and `BatchPermissionDecision` are JSON numbers 0, 1, and 2; `AgentShellPreference` is `auto`, `powershell`, or `git-bash`; `LocalHookScope` is 1 or 2. `SessionKind` stays `Scalar` because both the known strings and the numbers 0 through 5 are accepted. `CloudCronScheduleKind` and `WorkShareKind` stay `Scalar` because no reader was recovered. A number or null in a `Scalar` is preserved. Drive methods return `DriveGatewayResp`. The gateway body beyond `base_resp` is opaque.
 
@@ -153,7 +153,7 @@ Helpers exist only for payloads whose publisher object was recovered:
 | `questionnaire.dismiss` | `requestId`, `sessionId`, `agentName`, `status` |
 | `thread_goal.objective_updated_steering` | `sessionId`, `goalId` |
 
-`permission.ask`, `message.rewind`, `subagent.execution`, `ui.request`, and the other publish sites still decode as `InterpretedEvent` with `Payload` set from `payload_json`. They do not have a helper, because the payload expression was not a literal object.
+`permission.ask`, `message.rewind`, `subagent.execution`, and `ui.request` have helpers. Unknown event types still stay on `InterpretedEvent`. The type set is not closed.
 
 ## Dispatcher routes outside the 470
 
