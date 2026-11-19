@@ -46,7 +46,7 @@ func TestBatchDecisionAndShellPreference(t *testing.T) {
 	if _, _, _, err := encodeRequest(specByName["BatchReplyPermissions"], req); err == nil {
 		t.Fatal("expected invalid batch decision")
 	}
-	pref := AgentShellPreference("zsh")
+	pref := AgentShellPreference(9)
 	shell := PutAgentShellPreferenceReq{Preference: pref}
 	if _, _, _, err := encodeRequest(specByName["PutAgentShellPreference"], shell); err == nil {
 		t.Fatal("expected invalid shell preference")
@@ -56,7 +56,7 @@ func TestBatchDecisionAndShellPreference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Contains(body, []byte(`"preference":"git-bash"`)) {
+	if !bytes.Contains(body, []byte(`"preference":2`)) {
 		t.Fatalf("body %s", body)
 	}
 }

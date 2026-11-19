@@ -27,43 +27,30 @@ import (
 // query decoder does not coerce aliases, so a category query does not match.
 // Body JSON numbers do.
 
-// AgentShellPreference is the string Uz accepts on PutAgentShellPreference.
-// Any other value throws AGENT_SHELL_CONFIG_INVALID.
-type AgentShellPreference string
+// AgentShellPreference is the numeric enum pe in 0.7.8. Put compares the JSON
+// number with AUTO 0, POWERSHELL 1, and GIT_BASH 2. A string such as "auto"
+// is AGENT_SHELL_CONFIG_INVALID.
+type AgentShellPreference int
 
 const (
-	AgentShellAuto       AgentShellPreference = "auto"
-	AgentShellPowerShell AgentShellPreference = "powershell"
-	AgentShellGitBash    AgentShellPreference = "git-bash"
+	AgentShellAuto       AgentShellPreference = 0
+	AgentShellPowerShell AgentShellPreference = 1
+	AgentShellGitBash    AgentShellPreference = 2
 )
 
-// MarshalJSON rejects values Uz does not accept.
+// MarshalJSON emits 0, 1, or 2.
 func (p AgentShellPreference) MarshalJSON() ([]byte, error) {
-	switch p {
-	case AgentShellAuto, AgentShellPowerShell, AgentShellGitBash:
-		return json.Marshal(string(p))
-	default:
-		return nil, fmt.Errorf("desktop: agent shell preference must be auto, powershell, or git-bash")
-	}
+	return marshalClosedInt("agent shell preference", int(p), 0, 1, 2)
 }
 
-// UnmarshalJSON accepts only those three strings.
+// UnmarshalJSON accepts only 0, 1, and 2.
 func (p *AgentShellPreference) UnmarshalJSON(b []byte) error {
-	if bytes.Equal(b, []byte("null")) {
-		return fmt.Errorf("desktop: agent shell preference is null")
+	n, err := unmarshalClosedInt("agent shell preference", b, 0, 1, 2)
+	if err != nil {
+		return err
 	}
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return fmt.Errorf("desktop: agent shell preference: %w", err)
-	}
-	v := AgentShellPreference(s)
-	switch v {
-	case AgentShellAuto, AgentShellPowerShell, AgentShellGitBash:
-		*p = v
-		return nil
-	default:
-		return fmt.Errorf("desktop: agent shell preference %q is not auto, powershell, or git-bash", s)
-	}
+	*p = AgentShellPreference(n)
+	return nil
 }
 
 // PermissionReply is the numeric enum jhu accepts. 0 AllowOnce, 1 AllowAlways,

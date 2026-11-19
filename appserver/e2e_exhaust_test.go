@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -64,109 +67,199 @@ func assertGitStageRoundTrip(t *testing.T, ctx context.Context, desk *desktop.Cl
 
 func assertReviewCommits(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string) {
 	t.Helper()
-	listed, err := desk.ListWorkspaceReviewCommits(ctx, desktop.ListWorkspaceReviewCommitsReq{Workspace: workspace, BaseRef: "master"})
+	const (
+		reviewFile  = "review-tracked.txt"
+		reviewToken = "review-token"
+		reviewBase  = "review-base"
+	)
+	gitIn(t, workspace, "branch", "-f", reviewBase, "HEAD")
+	if err := os.WriteFile(filepath.Join(workspace, reviewFile), []byte(reviewToken+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	gitIn(t, workspace, "add", "-A")
+	gitIn(t, workspace, "commit", "-m", "review tracked")
+	headSHA := strings.TrimSpace(gitOut(t, workspace, "rev-parse", "HEAD"))
+	source := &desktop.WorkspaceReviewSourceView{Type: "branch", BaseRef: crudPtr(reviewBase)}
+	listed, err := desk.ListWorkspaceReviewCommits(ctx, desktop.ListWorkspaceReviewCommitsReq{Workspace: workspace, BaseRef: reviewBase})
 	if err != nil {
-		recordCall(t, ledger, "idl.ListWorkspaceReviewCommits", err)
-		return
+		t.Fatalf("ListWorkspaceReviewCommits: %v", err)
 	}
 	head, ok := listed.HeadCommit.String()
-	if !ok || head == "" {
-		ledger.note("idl.ListWorkspaceReviewCommits", "notrun", "head_commit was empty")
-		return
+	if !ok || head != headSHA {
+		t.Fatalf("head_commit %q want %s", head, headSHA)
 	}
 	ledger.note("idl.ListWorkspaceReviewCommits", "real", "head_commit "+head)
-	source := &desktop.WorkspaceReviewSourceView{Type: "branch", BaseRef: crudPtr("master")}
-	summary, err := desk.GetWorkspaceReviewSummary(ctx, desktop.GetWorkspaceReviewSummaryReq{Workspace: workspace, Source: source})
+	summary, err := loadReviewSummary(ctx, desk, workspace, source, reviewFile)
 	if err != nil {
-		recordCall(t, ledger, "idl.GetWorkspaceReviewSummary", err)
-		blockRoot(ledger, "idl.GetWorkspaceReviewSummary", []string{
-			"idl.ListWorkspaceReviewFileDiffs", "idl.GetWorkspaceReviewFileContent", "idl.SearchWorkspaceReviewDiffs",
-		}, "review summary was not accepted, so snapshot-scoped diff calls were not made")
+		t.Fatalf("GetWorkspaceReviewSummary: %v", err)
+	}
+	ledger.note("idl.GetWorkspaceReviewSummary", "real", "snapshot "+summary.snapshot+" file "+summary.fileID)
+	assertion, err := readTrackedReview(ctx, desk, workspace, source, summary.snapshot, summary.fileID, reviewFile, reviewToken)
+	if err == nil {
+		noteTrackedReview(ledger, assertion)
 		return
 	}
-	if detail, ok := populatedDetail(reflect.ValueOf(summary)); ok {
-		ledger.note("idl.GetWorkspaceReviewSummary", "real", detail)
+	if !reviewResolution(err) {
+		t.Fatalf("review chain: %v", err)
+	}
+	first := strings.TrimSpace(statusBody(err))
+	refreshed, err := loadReviewSummary(ctx, desk, workspace, source, reviewFile)
+	if err != nil {
+		t.Fatalf("review chain unresolved after one fresh summary: first %s; summary %v", first, err)
+	}
+	assertion, err = readTrackedReview(ctx, desk, workspace, source, refreshed.snapshot, refreshed.fileID, reviewFile, reviewToken)
+	if err != nil {
+		t.Fatalf("review chain unresolved after one fresh summary: first %s; retry %v", first, err)
+	}
+	noteTrackedReview(ledger, "first response "+first+"; retry "+assertion)
+}
+
+type reviewSummary struct {
+	snapshot string
+	fileID   string
+}
+
+func loadReviewSummary(ctx context.Context, desk *desktop.Client, workspace string, source *desktop.WorkspaceReviewSourceView, path string) (reviewSummary, error) {
+	summary, err := desk.GetWorkspaceReviewSummary(ctx, desktop.GetWorkspaceReviewSummaryReq{Workspace: workspace, Source: source})
+	if err != nil {
+		return reviewSummary{}, err
 	}
 	snapshot, ok := summary.ReviewSnapshotID.String()
 	if !ok || snapshot == "" {
-		blockRoot(ledger, "idl.GetWorkspaceReviewSummary", []string{
-			"idl.ListWorkspaceReviewFileDiffs", "idl.GetWorkspaceReviewFileContent", "idl.SearchWorkspaceReviewDiffs",
-		}, "summary did not return review_snapshot_id")
-		return
+		return reviewSummary{}, errors.New("review_snapshot_id was empty")
 	}
-	fileID := firstReviewFileID(summary.Files)
-	if reviewResolution(readReviewSnapshot(t, ctx, desk, ledger, workspace, source, snapshot, fileID)) {
-		refreshed, err := desk.GetWorkspaceReviewSummary(ctx, desktop.GetWorkspaceReviewSummaryReq{Workspace: workspace, Source: source})
-		if err != nil {
-			recordCall(t, ledger, "idl.GetWorkspaceReviewSummary", err)
-			return
-		}
-		next, ok := refreshed.ReviewSnapshotID.String()
-		if !ok || next == "" {
-			return
-		}
-		readReviewSnapshot(t, ctx, desk, ledger, workspace, source, next, firstReviewFileID(refreshed.Files))
-	}
-}
-
-func firstReviewFileID(files []desktop.WorkspaceReviewFileView) string {
-	if len(files) == 0 {
-		return ""
-	}
-	id, ok := files[0].FileID.String()
+	fileID, ok := reviewFileID(summary.Files, path)
 	if !ok {
-		return ""
+		return reviewSummary{}, fmt.Errorf("summary omitted %s", path)
 	}
-	return id
+	return reviewSummary{snapshot: snapshot, fileID: fileID}, nil
 }
 
-func readReviewSnapshot(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string, source *desktop.WorkspaceReviewSourceView, snapshot, fileID string) error {
-	t.Helper()
+func readTrackedReview(ctx context.Context, desk *desktop.Client, workspace string, source *desktop.WorkspaceReviewSourceView, snapshot, fileID, path, token string) (string, error) {
 	diffs, err := desk.ListWorkspaceReviewFileDiffs(ctx, desktop.ListWorkspaceReviewFileDiffsReq{
 		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot,
 	})
 	if err != nil {
-		recordCall(t, ledger, "idl.ListWorkspaceReviewFileDiffs", err)
-	} else if got, idOK := diffs.ReviewSnapshotID.String(); !idOK || got != snapshot {
-		t.Fatalf("diff snapshot %q", got)
-	} else {
-		ledger.note("idl.ListWorkspaceReviewFileDiffs", "real", "snapshot "+snapshot+" diffs "+itoaLen(len(diffs.Diffs)))
+		return "", err
+	}
+	got, ok := diffs.ReviewSnapshotID.String()
+	if !ok || got != snapshot {
+		return "", fmt.Errorf("diff snapshot %q want %s", got, snapshot)
+	}
+	if !reviewDiffHasFile(diffs.Diffs, fileID) {
+		return "", fmt.Errorf("diffs omitted file id %s", fileID)
 	}
 	tracked := false
-	searched, searchErr := desk.SearchWorkspaceReviewDiffs(ctx, desktop.SearchWorkspaceReviewDiffsReq{
-		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot, Query: "batch", IncludeUntrackedFiles: &tracked,
+	searched, err := desk.SearchWorkspaceReviewDiffs(ctx, desktop.SearchWorkspaceReviewDiffsReq{
+		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot, Query: token, IncludeUntrackedFiles: &tracked,
 	})
-	if searchErr != nil {
-		recordCall(t, ledger, "idl.SearchWorkspaceReviewDiffs", searchErr)
-	} else if got, idOK := searched.ReviewSnapshotID.String(); !idOK || got != snapshot {
-		t.Fatalf("search snapshot %q", got)
-	} else {
-		ledger.note("idl.SearchWorkspaceReviewDiffs", "real", "snapshot "+snapshot)
+	if err != nil {
+		return "", err
 	}
-	if fileID == "" {
-		ledger.note("idl.GetWorkspaceReviewFileContent", "notrun", "review summary listed no file id")
-		return searchErr
+	got, ok = searched.ReviewSnapshotID.String()
+	if !ok || got != snapshot {
+		return "", fmt.Errorf("search snapshot %q want %s", got, snapshot)
+	}
+	matches, ok := searched.TotalMatches.Float64()
+	if !ok || matches < 1 || !reviewSearchHasPath(searched.MatchedFiles, path) {
+		return "", fmt.Errorf("search did not match %s in snapshot %s", path, snapshot)
 	}
 	content, err := desk.GetWorkspaceReviewFileContent(ctx, desktop.GetWorkspaceReviewFileContentReq{
 		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot, FileID: fileID, Side: "new",
 	})
 	if err != nil {
-		recordCall(t, ledger, "idl.GetWorkspaceReviewFileContent", err)
-		if searchErr != nil {
-			return searchErr
+		return "", err
+	}
+	gotID, ok := content.FileID.String()
+	if !ok || gotID != fileID {
+		return "", fmt.Errorf("content file %q want %s", gotID, fileID)
+	}
+	text := ""
+	if content.Content != nil {
+		text, _ = content.Content.String()
+	}
+	if !strings.Contains(text, token) {
+		return "", fmt.Errorf("content %q does not contain %s", text, token)
+	}
+	return "snapshot " + snapshot + " file " + fileID + " content contains " + token, nil
+}
+
+func noteTrackedReview(ledger *coverageLedger, detail string) {
+	ledger.note("idl.ListWorkspaceReviewFileDiffs", "real", detail)
+	ledger.note("idl.SearchWorkspaceReviewDiffs", "real", detail)
+	ledger.note("idl.GetWorkspaceReviewFileContent", "real", detail)
+}
+
+func reviewFileID(files []desktop.WorkspaceReviewFileView, path string) (string, bool) {
+	for _, file := range files {
+		got, ok := file.Path.String()
+		if !ok || got != path {
+			continue
 		}
-		return err
+		id, ok := file.FileID.String()
+		return id, ok && id != ""
 	}
-	if got, idOK := content.FileID.String(); !idOK || got != fileID {
-		t.Fatalf("content file %q", got)
+	return "", false
+}
+
+func reviewDiffHasFile(diffs []desktop.WorkspaceReviewFileDiffView, fileID string) bool {
+	for _, diff := range diffs {
+		got, ok := diff.FileID.String()
+		if ok && got == fileID {
+			return true
+		}
 	}
-	ledger.note("idl.GetWorkspaceReviewFileContent", "real", "file id "+fileID+" side new")
-	return searchErr
+	return false
+}
+
+func reviewSearchHasPath(files []desktop.WorkspaceReviewSearchFileView, path string) bool {
+	for _, file := range files {
+		got, ok := file.Path.String()
+		if ok && got == path {
+			return true
+		}
+	}
+	return false
 }
 
 func reviewResolution(err error) bool {
 	var statusErr *desktop.StatusError
-	return errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "WORKSPACE_REVIEW_RESOLUTION_FAILED")
+	return errors.As(err, &statusErr) && statusErr.Status == 422 && strings.Contains(string(statusErr.Body), "WORKSPACE_REVIEW_RESOLUTION_FAILED")
+}
+
+func statusBody(err error) string {
+	var statusErr *desktop.StatusError
+	if errors.As(err, &statusErr) {
+		return string(statusErr.Body)
+	}
+	return err.Error()
+}
+
+func gitIn(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	gitOut(t, dir, args...)
+}
+
+func gitOut(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=sdk", "GIT_AUTHOR_EMAIL=sdk@example.com", "GIT_COMMITTER_NAME=sdk", "GIT_COMMITTER_EMAIL=sdk@example.com")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %s: %s", strings.Join(args, " "), strings.TrimSpace(string(out)))
+	}
+	return string(out)
+}
+
+func TestReviewResolutionFailureDoesNotPass(t *testing.T) {
+	outcome, detail := classifyServer(&desktop.StatusError{
+		Status: 422,
+		Body:   []byte(`{"code":422,"key":"WORKSPACE_REVIEW_RESOLUTION_FAILED","message":""}`),
+	})
+	if outcome != "failed" {
+		t.Fatalf("outcome %s detail %s", outcome, detail)
+	}
 }
 
 func assertFileWatchAndSearch(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string) {
@@ -447,7 +540,7 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 	ledger.note("idl.RemoveManagedWorkspaceGitWorktreesBatch", "notrun", "no batch of managed worktrees was created")
 	ledger.note("idl.RestoreSessionWorktree", "notrun", "needs a session worktree. Session lifecycle is owned by the parent tester and was not repeated")
 	ledger.note("idl.InvalidateSessionFileSyncSources", "notrun", "QuerySessionFileSyncSources returned no source object to invalidate")
-	ledger.note("idl.PutSandboxConfig", "notrun", "sandbox status modes were not mapped onto SandboxConfig enums, so the current config was not rewritten")
+	ledger.note("idl.PutSandboxConfig", "notrun", "GetSandboxStatus has filesystem_mode, network_mode, and local_access, but not enabled. PutSandboxConfig requires enabled, so the current config was not rewritten")
 	ledger.note("negative.unknown-desktop-path", "notrun", "covered by TestLiveSurface RawCall when that test runs; this batch did not repeat it")
 }
 

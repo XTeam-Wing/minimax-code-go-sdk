@@ -63,6 +63,6 @@ _, err = client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 470 个 IDL 方法是冻结的 DesktopService 表面。进程另外还提供 `/mavis/api/...` 分发叶子（权限、内容安全、浏览器、通信、cron、matrix、用量、文件、git、fs、runtime、diagnostics），在 `mavis.Client` 上有具名方法。`mavis.Raw` 只用于这份叶子清单之外的路径。
 
-别名只有在 0.7.8 的处理函数里能证明 JSON 类型时才收窄。`PermissionReply` 和 `BatchPermissionDecision` 是数字 0、1、2，不是字符串 `deny`。`AgentShellPreference` 是 `auto`、`powershell`、`git-bash`。`LocalHookScope` 是 1 或 2。`SessionKind` 仍是 `Scalar`，因为字符串和数字 0 到 5 都能过。`CloudCronScheduleKind` 和 `WorkShareKind` 没有读到校验函数，保持 `Scalar`。`Scalar` 会保留数字和 null。Drive 的 13 个方法返回 `DriveGatewayResp`；`base_resp` 之外的网关 JSON 在 `Raw` 里，这条路径不走 IDL 响应编码器。
+别名只有在 0.7.8 的处理函数里能证明 JSON 类型时才收窄。`PermissionReply` 和 `BatchPermissionDecision` 是数字 0、1、2，不是字符串 `deny`。`AgentShellPreference` 是数字 0（`auto`）、1（`powershell`）、2（`git-bash`）。字符串 `auto` 会被拒绝。`LocalHookScope` 是 1 或 2。`SessionKind` 仍是 `Scalar`，因为字符串和数字 0 到 5 都能过。`CloudCronScheduleKind` 和 `WorkShareKind` 没有读到校验函数，保持 `Scalar`。`Scalar` 会保留数字和 null。Drive 的 13 个方法返回 `DriveGatewayResp`；`base_resp` 之外的网关 JSON 在 `Raw` 里，这条路径不走 IDL 响应编码器。
 
 `cTu` 实际调用到的 `/mavis/api/agent` 叶子有具名方法。`GET /mavis/api/agent/{name}` 在 `routeResolvedAgent` 里有实现，但分发器要求路径还有下一段，所以这个信息接口到不了。

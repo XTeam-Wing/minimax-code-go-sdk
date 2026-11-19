@@ -231,7 +231,7 @@ func assignSample(f reflect.Value, name string) {
 		return
 	}
 	switch f.Type() {
-	case reflect.TypeOf(AgentShellPreference("")):
+	case reflect.TypeOf(AgentShellPreference(0)):
 		f.Set(reflect.ValueOf(AgentShellAuto))
 	case reflect.TypeOf(PermissionReply(0)):
 		f.Set(reflect.ValueOf(PermissionReplyDeny))

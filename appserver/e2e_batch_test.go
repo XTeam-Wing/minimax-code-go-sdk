@@ -172,8 +172,6 @@ func classifyServer(err error) (string, string) {
 		return "blocked", "HTTP " + strconv.Itoa(statusErr.Status) + " " + clip(body, 160)
 	case strings.Contains(body, "CONTENT_POLICY_VIOLATION"):
 		return "negative", "HTTP " + strconv.Itoa(statusErr.Status) + " CONTENT_POLICY_VIOLATION " + clip(body, 160)
-	case strings.Contains(body, "WORKSPACE_REVIEW_RESOLUTION_FAILED"):
-		return "negative", "HTTP 422 WORKSPACE_REVIEW_RESOLUTION_FAILED; the review snapshot did not resolve and this call is not a success"
 	case statusErr.Status == 409:
 		return "negative", "HTTP 409 " + clip(body, 180)
 	case statusErr.Status == 500:

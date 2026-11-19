@@ -156,47 +156,81 @@ func assertShellPreference(t *testing.T, ctx context.Context, desk *desktop.Clie
 		noteServer(t, ledger, "idl.GetAgentShellStatus", err)
 		return
 	}
-	original, ok := status.Status.Preference.String()
-	if !ok || original == "" {
-		supported, _ := status.Status.Supported.Bool()
-		ledger.note("idl.GetAgentShellStatus", "real", "supported decoded; preference was empty")
-		ledger.note("idl.PutAgentShellPreference", "notrun", "no preference string was stored to change")
-		if !supported && len(status.Status.Supported) == 0 {
-			ledger.note("idl.GetAgentShellStatus", "notrun", "status decoded with neither supported nor preference set")
-		}
+	original, ok := shellPreferenceNumber(status.Status.Preference)
+	if !ok {
+		ledger.note("idl.GetAgentShellStatus", "real", "status decoded; preference was not 0, 1, or 2")
+		ledger.note("idl.PutAgentShellPreference", "notrun", "stored preference was not 0, 1, or 2, so it was not changed")
 		return
 	}
 	next := desktop.AgentShellGitBash
-	if original == string(desktop.AgentShellGitBash) {
+	if original == desktop.AgentShellGitBash {
 		next = desktop.AgentShellAuto
 	}
 	put, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: next})
 	if err != nil {
-		noteServer(t, ledger, "idl.PutAgentShellPreference", err)
-		ledger.note("idl.GetAgentShellStatus", "real", "preference "+original)
-		return
+		if runtime.GOOS != "windows" && shellPlatformRejected(err) {
+			ledger.note("idl.GetAgentShellStatus", "real", "preference "+shellPreferenceName(original))
+			ledger.note("idl.PutAgentShellPreference", "negative", "HTTP 500 INTERNAL_ERROR. setPreference throws AGENT_SHELL_UNSUPPORTED_PLATFORM when platform is not win32, and the request was not stored")
+			return
+		}
+		t.Fatalf("PutAgentShellPreference: %v", err)
 	}
 	if put.Status == nil {
 		t.Fatal("shell put status")
 	}
-	got, ok := put.Status.Preference.String()
-	if !ok || got != string(next) {
-		t.Fatalf("shell preference %q", got)
+	got, ok := shellPreferenceNumber(put.Status.Preference)
+	if !ok || got != next {
+		t.Fatalf("shell preference %v", put.Status.Preference)
 	}
 	again, err := desk.GetAgentShellStatus(ctx, desktop.GetAgentShellStatusReq{})
 	if err != nil || again.Status == nil {
 		t.Fatalf("shell reread: %v", err)
 	}
-	reread, ok := again.Status.Preference.String()
-	if !ok || reread != string(next) {
-		t.Fatalf("stored shell preference %q", reread)
+	reread, ok := shellPreferenceNumber(again.Status.Preference)
+	if !ok || reread != next {
+		t.Fatalf("stored shell preference %v", again.Status.Preference)
 	}
-	restore := desktop.AgentShellPreference(original)
-	if _, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: restore}); err != nil {
+	if _, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: original}); err != nil {
 		t.Fatalf("restore shell: %v", err)
 	}
-	ledger.note("idl.GetAgentShellStatus", "real", "preference changed to "+string(next))
-	ledger.note("idl.PutAgentShellPreference", "real", "preference restored to "+original)
+	ledger.note("idl.GetAgentShellStatus", "real", "preference changed to "+shellPreferenceName(next))
+	ledger.note("idl.PutAgentShellPreference", "real", "preference restored to "+shellPreferenceName(original))
+}
+
+func shellPlatformRejected(err error) bool {
+	var statusErr *desktop.StatusError
+	if !errors.As(err, &statusErr) || statusErr.Status != 500 {
+		return false
+	}
+	body := string(statusErr.Body)
+	return strings.Contains(body, `"key":"INTERNAL_ERROR"`) && strings.Contains(body, `"message":"internal error"`)
+}
+
+func shellPreferenceNumber(value desktop.Scalar) (desktop.AgentShellPreference, bool) {
+	n, ok := value.Float64()
+	if !ok {
+		return 0, false
+	}
+	pref := desktop.AgentShellPreference(n)
+	switch pref {
+	case desktop.AgentShellAuto, desktop.AgentShellPowerShell, desktop.AgentShellGitBash:
+		return pref, true
+	default:
+		return 0, false
+	}
+}
+
+func shellPreferenceName(value desktop.AgentShellPreference) string {
+	switch value {
+	case desktop.AgentShellAuto:
+		return "0"
+	case desktop.AgentShellPowerShell:
+		return "1"
+	case desktop.AgentShellGitBash:
+		return "2"
+	default:
+		return "unset"
+	}
 }
 
 func assertMCPServer(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
