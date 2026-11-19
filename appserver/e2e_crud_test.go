@@ -34,6 +34,7 @@ func assertLocalCRUD(t *testing.T, ctx context.Context, client *Client, desk *de
 	assertUnixHealth(t, ledger)
 	assertRoundTrips(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
 	assertTopo(t, ctx, client, desk, ledger, workspace, agent, sessionID)
+	assertLocalExtras(t, ctx, desk, ledger, workspace, agent, projectKey)
 }
 
 func assertEcho(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
@@ -253,6 +254,30 @@ func assertMCPServer(t *testing.T, ctx context.Context, desk *desktop.Client, le
 		t.Fatalf("GetLocalMcpServer: %v", err)
 	}
 	assertSyntheticSecret(t, ctx, desk, ledger, name)
+	runtimeServer, err := desk.GetLocalMcpRuntimeServer(ctx, desktop.GetLocalMCPRuntimeServerReq{ServerName: name})
+	if err != nil {
+		recordCall(t, ledger, "idl.GetLocalMcpRuntimeServer", err)
+	} else if got, ok := runtimeServer.Name.String(); !ok || got != name {
+		t.Fatalf("runtime server %q", got)
+	} else {
+		ledger.note("idl.GetLocalMcpRuntimeServer", "real", "name sdkmcp")
+	}
+	tools, err := desk.ListLocalMcpRuntimeTools(ctx, desktop.ListLocalMCPRuntimeToolsReq{ServerName: name})
+	if err != nil {
+		recordCall(t, ledger, "idl.ListLocalMcpRuntimeTools", err)
+	} else if got, ok := tools.Server.String(); !ok || got != name {
+		t.Fatalf("runtime tools server %q", got)
+	} else {
+		ledger.note("idl.ListLocalMcpRuntimeTools", "real", "server sdkmcp")
+	}
+	disabledRuntime, err := desk.DisableLocalMcpRuntimeServer(ctx, desktop.DisableLocalMCPRuntimeServerReq{ServerName: name})
+	if err != nil {
+		recordCall(t, ledger, "idl.DisableLocalMcpRuntimeServer", err)
+	} else if flag, ok := disabledRuntime.Disabled.Bool(); !ok || !flag {
+		t.Fatalf("runtime disabled %#v", disabledRuntime.Disabled)
+	} else {
+		ledger.note("idl.DisableLocalMcpRuntimeServer", "real", "disabled true")
+	}
 	tested, err := desk.TestLocalMcpServer(ctx, desktop.TestLocalMCPServerReq{ServerName: name})
 	if err != nil || tested.Result == nil {
 		recordCall(t, ledger, "idl.TestLocalMcpServer", err)

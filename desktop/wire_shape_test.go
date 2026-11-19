@@ -31,6 +31,28 @@ func TestCreateSkillWireMatchesReviewer(t *testing.T) {
 	}
 }
 
+func TestCreateGoalWireHasNoRequestOrTimeLimit(t *testing.T) {
+	budget := Number(50000)
+	objective := "write one file"
+	body, err := json.Marshal(CreateGoalReq{SessionID: "s", Objective: &objective, TokenBudget: &budget})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["token_budget"] != float64(50000) || got["objective"] != objective {
+		t.Fatalf("%s", body)
+	}
+	if _, ok := got["request_limit"]; ok {
+		t.Fatal(body)
+	}
+	if _, ok := got["active_seconds_limit"]; ok {
+		t.Fatal(body)
+	}
+}
+
 func TestCreateCronWireIncludesReviewedFields(t *testing.T) {
 	enabled := false
 	kind := CronScheduleOnce

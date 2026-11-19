@@ -14,9 +14,17 @@ const (
 )
 
 // Goal send behaviors Y8i accepts. Empty means the server default.
-// "queue" and "steer" are the only other values. CreateGoal on this baseline
-// always requests kickoff admission, so a successful create starts a model
-// turn. A prompt that mentions a goal is not evidence that a goal exists.
+// "queue" and "steer" are the only other values. The 0.7.8 create handler
+// always passes requireKickoffAdmission true, so a successful create starts
+// a model turn. CreateGoalReq has session, objective, token budget, attachments,
+// and send behavior. It has no request limit and no active-seconds field.
+// Q8i stores a positive token budget and drops any other number. The host
+// compares tokensUsed with that budget after each accounted request, and
+// tokensUsed includes input, cache writes, cache reads, and output. Crossing
+// the budget sets budget_limited and stops auto-continuation. update_goal
+// complete is a model proposal the host settles later; PatchGoal status
+// complete is a separate call. A prompt that mentions a goal is not evidence
+// that a goal exists.
 const (
 	GoalSendQueue = "queue"
 	GoalSendSteer = "steer"
