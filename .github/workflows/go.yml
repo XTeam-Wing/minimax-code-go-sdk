@@ -31,6 +31,7 @@ jobs:
       - name: vet
         run: go vet ./...
       - name: test
+        shell: bash
         run: |
           set -euo pipefail
           # Go 1.22 does not emit LC_UUID. macOS 26 dyld aborts those test
