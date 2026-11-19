@@ -23,7 +23,9 @@ import (
 // permission.ask fails the scenario; the test does not reply allow.
 //
 // CreateGoal starts a model turn. TokenBudget defaults to 24000 and can be
-// overridden with MCODE_E2E_GOAL_TOKEN_BUDGET. DeleteGoal and AbortSession
+// overridden with MCODE_E2E_GOAL_TOKEN_BUDGET. This observation stops when a
+// child session starts. It does not wait for the host verifier. The verifier
+// lifecycle is TestLiveWorkflowGoalDeliverable. DeleteGoal and AbortSession
 // run even when the model does not spawn a subagent.
 func TestLiveGoalAndSubagent(t *testing.T) {
 	if os.Getenv("MCODE_E2E_LLM") != "1" {

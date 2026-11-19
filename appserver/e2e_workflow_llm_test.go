@@ -22,6 +22,8 @@ import (
 // reads it back before any model call. None of them treats an HTTP 200 as the
 // workflow result. Reports go to the feature file, outside the module.
 
+// TestLiveWorkflowGoFix checks one SendMessage repair. It does not wait for
+// the host verifier. TestLiveWorkflowGoalDeliverable is that lifecycle.
 func TestLiveWorkflowGoFix(t *testing.T) {
 	_, desk, sessionID, workspace := startWorkflowLLM(t)
 	writeGoBug(t, workspace)
@@ -40,7 +42,7 @@ func TestLiveWorkflowGoFix(t *testing.T) {
 	}
 	answered, _ := asks.snapshot()
 	body, err := os.ReadFile(filepath.Join(workspace, "add_test.go"))
-	if err != nil || !strings.Contains(string(body), "Add(1, 2) != 3") {
+	if err != nil || !strings.Contains(string(body), "Add(2, -1) != 1") {
 		t.Fatalf("test file changed or missing: %v %s", err, body)
 	}
 	writeFeatureRow(t, featureRow{
@@ -147,9 +149,10 @@ func TestLiveWorkflowStreamCancel(t *testing.T) {
 
 func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 	_, desk, sessionID, workspace := startWorkflowLLM(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), goalWall+time.Minute)
 	defer cancel()
-	budget := desktop.Number(24000)
+	initGoBugRepo(t, workspace)
+	budget := desktop.Number(goalScenarioBudget)
 	if raw := os.Getenv("MCODE_E2E_GOAL_TOKEN_BUDGET"); raw != "" {
 		var n desktop.Number
 		if err := n.UnmarshalJSON([]byte(raw)); err != nil {
@@ -157,8 +160,7 @@ func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 		}
 		budget = n
 	}
-	marker := "goal-deliverable-marker"
-	objective := "Create GOAL_DONE.txt containing exactly " + marker + ". Do not change any other file."
+	objective := "TestAdd fails because Add subtracts. Fix only add.go so go test passes. Do not modify add_test.go or go.mod."
 	watchPermissions(t, ctx, desk, sessionID, allowOnceWorkspaceWrite)
 	req := desktop.CreateGoalReq{SessionID: sessionID, Objective: &objective, TokenBudget: &budget}
 	if err := desktop.ValidateCreateGoal(req); err != nil {
@@ -168,41 +170,57 @@ func TestLiveWorkflowGoalDeliverable(t *testing.T) {
 	if err != nil || created.Goal == nil {
 		t.Fatalf("CreateGoal: %v", err)
 	}
-	deadline := time.Now().Add(5 * time.Minute)
+	started := time.Now()
+	var wait goalWait
+	wait.Started = started
 	var last desktop.GoalState
-	for time.Now().Before(deadline) {
+	var samples []string
+	stop := ""
+	for {
 		got, err := desk.GetGoal(ctx, desktop.GetGoalReq{SessionID: sessionID})
 		if err != nil || got.Goal == nil {
 			t.Fatalf("GetGoal: %v", err)
 		}
 		last = *got.Goal
 		status, _ := last.StatusText()
-		reason := scalarString(last.StatusReason)
-		if strings.Contains(reason, "budget_limited") || strings.Contains(reason, "verifier_") || status == desktop.GoalStatusBudgetLimited {
+		verdict := ""
+		if last.LastVerification != nil {
+			verdict = scalarString(last.LastVerification.Verdict)
+		}
+		tokens := scalarFloat(last.TokensUsed)
+		requests := scalarFloat(last.RequestsUsed)
+		now := time.Now()
+		samples = append(samples, fmt.Sprintf("%s status=%s tokens=%.0f requests=%.0f verdict=%s reason=%s", now.Sub(started).Round(time.Second), status, tokens, requests, verdict, scalarString(last.StatusReason)))
+		if verdict != "" || status != desktop.GoalStatusActive {
 			break
 		}
-		if last.LastVerification != nil && last.LastVerification.Verdict != nil {
-			break
-		}
-		if status == desktop.GoalStatusComplete && last.LastVerification != nil {
+		stop = wait.step(now, tokens, requests, status, verdict)
+		if stop != "" {
 			break
 		}
 		time.Sleep(2 * time.Second)
 	}
-	body, readErr := os.ReadFile(filepath.Join(workspace, "GOAL_DONE.txt"))
+	trace := goalTrace(last, stop, samples, workspace)
 	verdict := ""
 	if last.LastVerification != nil {
 		verdict = scalarString(last.LastVerification.Verdict)
 	}
-	reason := scalarString(last.StatusReason)
-	if readErr != nil || strings.TrimSpace(string(body)) != marker || !strings.EqualFold(verdict, "pass") {
-		t.Fatalf("deliverable %q read %v verdict %q status %q reason %q", body, readErr, verdict, mustStatus(last), reason)
+	diffOK, diffText := goFixDiff(workspace)
+	testOut, testErr := runGoTest(workspace)
+	if stop != "" || !strings.EqualFold(verdict, "pass") || testErr != nil || !diffOK {
+		writeFeatureRow(t, featureRow{
+			ID:       "feature.goal-deliverable",
+			Layer:    "feature",
+			Result:   goalTraceResult(stop),
+			Evidence: trace + "\ngo-test: " + oneLine(testOut) + "\ndiff: " + oneLine(diffText),
+		})
+		t.Fatalf("host verdict unproven\n%s\ngo-test: %s\n%v\ndiff: %s", trace, testOut, testErr, diffText)
 	}
 	writeFeatureRow(t, featureRow{
 		ID:       "feature.goal-deliverable",
 		Layer:    "feature",
 		Result:   "pass",
-		Evidence: "GOAL_DONE.txt matched and last_verification.verdict was pass",
+		Evidence: trace,
 	})
 }
 
@@ -431,7 +449,7 @@ func writeGoBug(t *testing.T, dir string) {
 	files := map[string]string{
 		"go.mod":      "module example.com/bugfix\n\ngo 1.22\n",
 		"add.go":      "package bugfix\n\nfunc Add(a, b int) int { return a - b }\n",
-		"add_test.go": "package bugfix\n\nimport \"testing\"\n\nfunc TestAdd(t *testing.T) {\n\tif Add(1, 2) != 3 {\n\t\tt.Fatal(Add(1, 2))\n\t}\n}\n",
+		"add_test.go": "package bugfix\n\nimport \"testing\"\n\nfunc TestAdd(t *testing.T) {\n\tif Add(1, 2) != 3 {\n\t\tt.Fatal(Add(1, 2))\n\t}\n\tif Add(2, -1) != 1 {\n\t\tt.Fatal(Add(2, -1))\n\t}\n\tif Add(0, 0) != 0 {\n\t\tt.Fatal(Add(0, 0))\n\t}\n}\n",
 	}
 	for name, body := range files {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
@@ -454,9 +472,101 @@ func countMarker(resp desktop.GetMessagesResp, marker string) int {
 	return n
 }
 
+func initGoBugRepo(t *testing.T, dir string) {
+	t.Helper()
+	writeGoBug(t, dir)
+	runGit(t, dir, "init", "-b", "master")
+	runGit(t, dir, "add", "go.mod", "add.go", "add_test.go")
+	runGit(t, dir, "-c", "user.email=sdk@example.com", "-c", "user.name=sdk", "commit", "-m", "failing add")
+}
+
+func runGit(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+	}
+}
+
+func runGoTest(dir string) (string, error) {
+	cmd := exec.Command("go", "test", ".")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+func goFixDiff(dir string) (bool, string) {
+	cmd := exec.Command("git", "-C", dir, "diff", "--name-only")
+	out, err := cmd.CombinedOutput()
+	text := string(out)
+	if err != nil {
+		return false, text + err.Error()
+	}
+	hasAdd := false
+	protected := false
+	for _, name := range strings.Fields(strings.ReplaceAll(text, "\n", " ")) {
+		switch name {
+		case "add.go":
+			hasAdd = true
+		case "add_test.go", "go.mod":
+			protected = true
+		}
+	}
+	body, readErr := os.ReadFile(filepath.Join(dir, "add.go"))
+	source := string(body)
+	if readErr != nil {
+		source = readErr.Error()
+	}
+	ok := hasAdd && !protected && strings.Contains(source, "+") && !strings.Contains(source, "a - b")
+	return ok, text + "\n" + source
+}
+
 func mustStatus(goal desktop.GoalState) string {
 	text, _ := goal.StatusText()
 	return text
+}
+
+func goalTrace(goal desktop.GoalState, stop string, samples []string, workspace string) string {
+	verdict := ""
+	if goal.LastVerification != nil {
+		verdict = scalarString(goal.LastVerification.Verdict)
+	}
+	usage := ""
+	if goal.TokenUsage != nil {
+		usage = fmt.Sprintf(" input=%.0f cache_write=%.0f cache_read=%.0f output=%.0f", scalarFloat(goal.TokenUsage.InputTokens), scalarFloat(goal.TokenUsage.CacheWriteTokens), scalarFloat(goal.TokenUsage.CacheReadTokens), scalarFloat(goal.TokenUsage.OutputTokens))
+	}
+	kind := "product"
+	if stop != "" {
+		kind = "harness_limit:" + stop
+	}
+	return fmt.Sprintf("%s status=%s reason=%s verdict=%s tokens=%.0f requests=%.0f%s workspace=%s samples=%s", kind, mustStatus(goal), scalarString(goal.StatusReason), verdict, scalarFloat(goal.TokensUsed), scalarFloat(goal.RequestsUsed), usage, workspace, strings.Join(samples, " | "))
+}
+
+func goalTraceResult(stop string) string {
+	if stop == "" {
+		return "fail"
+	}
+	return "limit"
+}
+
+func oneLine(text string) string {
+	text = strings.ReplaceAll(text, "\n", " ")
+	if len(text) > 500 {
+		return text[:500]
+	}
+	return text
+}
+
+func scalarFloat(value *desktop.Scalar) float64 {
+	if value == nil {
+		return 0
+	}
+	n, ok := value.Float64()
+	if !ok {
+		return 0
+	}
+	return n
 }
 
 func scalarString(value *desktop.Scalar) string {

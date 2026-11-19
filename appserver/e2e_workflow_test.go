@@ -282,6 +282,61 @@ func startWorkflow(t *testing.T, data, workspace, auth string) *Client {
 	return client
 }
 
+const (
+	goalScenarioBudget = 250000
+	goalUsageGuard     = 230000
+	goalWall           = 3 * time.Minute
+	goalVerifierWindow = 90 * time.Second
+)
+
+// goalWait tracks one GetGoal poll sequence. tokensUsed is the goal counter,
+// which continues to rise while the verifier child is accounted. A parent
+// request plateau is not a stop. The clock for the verifier starts only after
+// that plateau, when tokens are still increasing and the goal is active.
+type goalWait struct {
+	Started       time.Time
+	VerifierSince time.Time
+	LastRequests  float64
+	LastTokens    float64
+	SeenWork      bool
+}
+
+func (w *goalWait) step(at time.Time, tokens, requests float64, status string, verdict string) string {
+	if verdict != "" {
+		return ""
+	}
+	if !w.Started.IsZero() && at.Sub(w.Started) >= goalWall {
+		return "wall"
+	}
+	if tokens >= goalUsageGuard {
+		return "usage_guard"
+	}
+	if !w.SeenWork {
+		if requests > 0 || tokens > 0 {
+			w.SeenWork = true
+			w.LastRequests = requests
+			w.LastTokens = tokens
+		}
+		return ""
+	}
+	if requests > w.LastRequests {
+		w.VerifierSince = time.Time{}
+		w.LastRequests = requests
+		w.LastTokens = tokens
+		return ""
+	}
+	if requests == w.LastRequests && tokens > w.LastTokens && status == desktop.GoalStatusActive {
+		if w.VerifierSince.IsZero() {
+			w.VerifierSince = at
+		}
+	}
+	w.LastTokens = tokens
+	if !w.VerifierSince.IsZero() && at.Sub(w.VerifierSince) >= goalVerifierWindow {
+		return "verifier_window"
+	}
+	return ""
+}
+
 type featureRow struct {
 	ID       string `json:"id"`
 	Layer    string `json:"layer"`

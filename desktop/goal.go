@@ -39,6 +39,8 @@ const (
 // not return the stored effort. A call without session_id writes the process
 // default and drops thinking. The same-key path uses the parent snapshot and
 // does not set requireExplicitEffort. The SDK does not choose an effort.
+// A parent request count of 6 with tokens still climbing is the verifier
+// still running. Stopping there is a harness limit, not a product verdict.
 // PatchGoal status complete is a separate call. A prompt that mentions a
 // goal is not evidence that a goal exists.
 const (
