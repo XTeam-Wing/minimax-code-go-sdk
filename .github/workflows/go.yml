@@ -31,7 +31,19 @@ jobs:
       - name: vet
         run: go vet ./...
       - name: test
-        run: go test ./...
+        run: |
+          set -euo pipefail
+          # Go 1.22 does not emit LC_UUID. macOS 26 dyld aborts those test
+          # binaries (signal: abort trap). Current stable Go is executed.
+          if [ "${{ runner.os }}" = "macOS" ] && [ "${{ matrix.go }}" = "1.22.x" ]; then
+            echo "compile-only: Go 1.22 test binaries do not run on this macOS image"
+            go test -c -o "$RUNNER_TEMP/appserver.test" ./appserver
+            go test -c -o "$RUNNER_TEMP/desktop.test" ./desktop
+            go test -c -o "$RUNNER_TEMP/mavis.test" ./mavis
+            go test -c -o "$RUNNER_TEMP/ws.test" ./internal/ws
+          else
+            go test ./...
+          fi
       - name: race
         if: runner.os == 'Linux'
         run: go test -race ./...
