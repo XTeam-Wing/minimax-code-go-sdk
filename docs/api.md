@@ -68,11 +68,11 @@ Request fields come from the IDL bindings:
 | whole-body (`transport: jsonBody`, 73 methods) | one JSON object using `json` names |
 | `kind: none` | omitted (this includes most `base_req` fields) |
 
-Response objects use IDL `jsonName`s. A field whose schema says `kind: scalar` without a TypeScript type is `desktop.Scalar`. Call `String`, `Bool`, or `Float64`. The primitive is unverified; the name is not. Across the generated structs: 1,991 fields have a declared Go type, 2,971 are `Scalar`, 13 drive responses also keep `GatewayRaw`, and 1 field stays `json.RawMessage` because the binding is unsupported and the schema has no struct. Request structs are the typed side: 1,358 declared fields and 33 `Scalar` fields across 452 request types (some of the 470 methods share a request type). That split is the IDL, not a guess.
+Response objects use IDL `jsonName`s. A field whose schema says `kind: scalar` without a recovered `tsType` is `desktop.Scalar`. Call `String`, `Bool`, or `Float64`. Across the generated structs there are 2,145 fields with a declared Go type and 2,818 `Scalar` fields. Request structs have no remaining `Scalar` fields: erased aliases such as `PermissionReply` and `LocalHookScope` are strings, because the binding is a scalar and the alias is not numeric or boolean. A response field stays `Scalar` when no binding and no `structFields` entry names that struct field with a single `tsType`. That is the upstream schema, not a hidden guess.
 
 `Number` is a float64 because the server decodes `number` and `ThriftI64` with JavaScript `Number`.
 
-Drive routes under `/minimax-desktop/api/v1/drive` are rewritten by the app-server dispatcher to the website gateway before the IDL registrar. Those 13 methods still use the IDL request bindings. `GatewayRaw` keeps the gateway body.
+Drive routes under `/minimax-desktop/api/v1/drive` are rewritten to the website gateway (`EUi` / `YZ`) before the IDL registrar. The 13 methods validate the gateway rules (offset `0..2147483647`, limit `1..100`, `sort_by` `deployed_at|updated_at`, `sort_order` `asc|desc`, `days` `7|30`, non-empty `node_id`, `display_name`, and `alias`) and return `DriveGatewayResp`. `BaseResp.StatusCode` is a number or a decimal string. `Raw` is the full JSON body. The IDL response struct is not what this path returns.
 
 `RawCall` sends an arbitrary method and URL on the same tunnel.
 
@@ -134,6 +134,22 @@ Account and API-key methods exist (`AccountLoginStart`, `UpsertMiniMaxApiKey`, a
 `errors.Is(err, appserver.ErrNotInitialized)` matches the code. A non-2xx DesktopService HTTP status is `*desktop.StatusError` and includes the body. A JSON body that is not the IDL object is `*desktop.DecodeError` and includes the bytes. A tunnel `stream-error` frame is `*desktop.StreamError`.
 
 Messages larger than 16 MiB are rejected. The client also drops the connection on a line that large.
+
+## Events that are known, not closed
+
+`Interpret` accepts every frame. `HasType` is false when `type` is missing or is not a JSON string; the frame is still returned. A live 0.7.8 subscription produced `kind=heartbeat` with no `type` and the stream stayed open.
+
+Helpers exist only for payloads whose publisher object was recovered:
+
+| type | Fields seen at the publish site |
+| --- | --- |
+| `permission.resolved` | `requestId`, `sessionId`, `decision` |
+| `config.permission_mode.changed` | `permissionMode` |
+| `agent.updated` | `agentName` |
+| `questionnaire.dismiss` | `requestId`, `sessionId`, `agentName`, `status` |
+| `thread_goal.objective_updated_steering` | `sessionId`, `goalId` |
+
+`permission.ask`, `message.rewind`, `subagent.execution`, `ui.request`, and the other publish sites still decode as `InterpretedEvent` with `Payload` set from `payload_json`. They do not have a helper, because the payload expression was not a literal object.
 
 ## Dispatcher routes outside the 470
 

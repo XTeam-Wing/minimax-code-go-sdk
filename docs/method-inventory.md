@@ -4,9 +4,9 @@ Generated from `@minimax-ai/code` 0.7.8 IDL tables (`k` unary and `Yi` SSE) cros
 
 Denominator: **470** methods. `RawCall` is not one of them.
 
-Scalar response primitives are unverified when the IDL schema records `kind: scalar` without a TypeScript type. Those fields use `Scalar` and keep the JSON literal.
+Scalar means the IDL schema recorded `kind: scalar` and no single binding or structFields tsType was found for that struct field. A TypeScript alias that is still a scalar binding is generated as `string`, because the HTTP binder only accepts a JSON string, number, or boolean and the alias is not numeric or boolean.
 
-Drive paths are intercepted by the app-server dispatcher and handled by the website gateway. The request path is unchanged. `GatewayRaw` retains the gateway body.
+Drive paths are rewritten to the website gateway before the IDL response encoder. Those methods return `DriveGatewayResp` (`base_resp` plus the raw JSON body). The IDL response struct is not applied on that path.
 
 | Method | HTTP | Path | Transport | Category | Phase | Side effect |
 | --- | --- | --- | --- | --- | --- | --- |

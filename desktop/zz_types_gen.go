@@ -36,19 +36,19 @@ type DesktopBackgroundTaskError struct {
 // BaseReq is the 0.7.8 IDL struct BaseReq.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type BaseReq struct {
-	AppIDDeprecated       *Scalar           `json:"AppID_deprecated,omitempty"`
-	AbConf                map[string]Scalar `json:"ab_conf,omitempty"`
-	OSDeprecated          *Scalar           `json:"os_deprecated,omitempty"`
-	SysLanguageDeprecated *Scalar           `json:"sys_language_deprecated,omitempty"`
-	IPRegionDeprecated    *Scalar           `json:"ip_region_deprecated,omitempty"`
-	ChannelDeprecated     *Scalar           `json:"channel_deprecated,omitempty"`
-	AbConfV2              map[string]Scalar `json:"ab_conf_v2,omitempty"`
-	IPLocation            *IPLocation       `json:"ip_location,omitempty"`
-	IPLocationV2          *IPLocationV2     `json:"ip_location_v2,omitempty"`
-	AuthState             *Scalar           `json:"auth_state,omitempty"`
-	CommonParam           *CommonParam      `json:"common_param,omitempty"`
-	BusData               *BusData          `json:"bus_data,omitempty"`
-	Extra                 *ExtraInfo        `json:"Extra,omitempty"`
+	AppIDDeprecated       *string                      `json:"AppID_deprecated,omitempty"`
+	AbConf                map[string]map[string]string `json:"ab_conf,omitempty"`
+	OSDeprecated          *string                      `json:"os_deprecated,omitempty"`
+	SysLanguageDeprecated *string                      `json:"sys_language_deprecated,omitempty"`
+	IPRegionDeprecated    *string                      `json:"ip_region_deprecated,omitempty"`
+	ChannelDeprecated     *string                      `json:"channel_deprecated,omitempty"`
+	AbConfV2              map[string]string            `json:"ab_conf_v2,omitempty"`
+	IPLocation            *IPLocation                  `json:"ip_location,omitempty"`
+	IPLocationV2          *IPLocationV2                `json:"ip_location_v2,omitempty"`
+	AuthState             *string                      `json:"auth_state,omitempty"`
+	CommonParam           *CommonParam                 `json:"common_param,omitempty"`
+	BusData               *BusData                     `json:"bus_data,omitempty"`
+	Extra                 *ExtraInfo                   `json:"Extra,omitempty"`
 }
 
 // IPLocation is the 0.7.8 IDL struct IpLocation.
@@ -408,8 +408,8 @@ type PreviewModelAccessPackageResp struct {
 // ModelAccessPackageSource is the 0.7.8 IDL struct ModelAccessPackageSource.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ModelAccessPackageSource struct {
-	Kind Scalar `json:"kind"`
-	Path Scalar `json:"path"`
+	Kind string `json:"kind"`
+	Path string `json:"path"`
 }
 
 // ModelAccessSnapshotResp is the 0.7.8 IDL struct ModelAccessSnapshotResp.
@@ -569,8 +569,8 @@ type ModelModalities struct {
 // ModelThinkingInput is the 0.7.8 IDL struct ModelThinkingInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ModelThinkingInput struct {
-	Effort      *Scalar                    `json:"effort,omitempty"`
-	OffBehavior *Scalar                    `json:"off_behavior,omitempty"`
+	Effort      *string                    `json:"effort,omitempty"`
+	OffBehavior *string                    `json:"off_behavior,omitempty"`
 	Budgets     *ModelThinkingBudgetsInput `json:"budgets,omitempty"`
 }
 
@@ -800,9 +800,9 @@ type GetQueryBindingEchoResp struct {
 // BindingPageQuery is the 0.7.8 IDL struct BindingPageQuery.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type BindingPageQuery struct {
-	Cursor  *Scalar  `json:"cursor,omitempty"`
-	Limit   *Scalar  `json:"limit,omitempty"`
-	Filters []Scalar `json:"filters,omitempty"`
+	Cursor  *string  `json:"cursor,omitempty"`
+	Limit   *Number  `json:"limit,omitempty"`
+	Filters []string `json:"filters,omitempty"`
 }
 
 // GetNestedQueryBindingEchoResp is the 0.7.8 IDL struct GetNestedQueryBindingEchoResp.
@@ -922,10 +922,10 @@ type SandboxApplyResult struct {
 // SandboxConfig is the 0.7.8 IDL struct SandboxConfig.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type SandboxConfig struct {
-	Enabled     Scalar                   `json:"enabled"`
+	Enabled     bool                     `json:"enabled"`
 	Filesystem  *SandboxFilesystemConfig `json:"filesystem"`
 	Network     *SandboxNetworkConfig    `json:"network"`
-	LocalAccess Scalar                   `json:"local_access"`
+	LocalAccess string                   `json:"local_access"`
 }
 
 // SandboxFilesystemConfig is the 0.7.8 IDL struct SandboxFilesystemConfig.
@@ -1084,8 +1084,8 @@ type ApplyCanvasOperationResp struct {
 // CanvasOperationV1 is the 0.7.8 IDL struct CanvasOperationV1.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CanvasOperationV1 struct {
-	SchemaVersion Scalar             `json:"schema_version"`
-	OperationID   Scalar             `json:"operation_id"`
+	SchemaVersion Number             `json:"schema_version"`
+	OperationID   string             `json:"operation_id"`
 	Mutations     []CanvasMutationV1 `json:"mutations"`
 }
 
@@ -1204,9 +1204,9 @@ type SkillHubItem struct {
 // CreatorInfo is the 0.7.8 IDL struct CreatorInfo.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CreatorInfo struct {
-	UserID    *Scalar `json:"user_id,omitempty"`
-	UserName  *Scalar `json:"user_name,omitempty"`
-	AvatarURL *Scalar `json:"avatar_url,omitempty"`
+	UserID    *string `json:"user_id,omitempty"`
+	UserName  *string `json:"user_name,omitempty"`
+	AvatarURL *string `json:"avatar_url,omitempty"`
 }
 
 // GetMarketplacePluginResp is the 0.7.8 IDL struct GetMarketplacePluginResp.
@@ -1434,9 +1434,9 @@ type PreviewGithubPluginResp struct {
 // GithubPluginSource is the 0.7.8 IDL struct GithubPluginSource.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type GithubPluginSource struct {
-	RepositoryURL Scalar  `json:"repository_url"`
-	CommitSha     Scalar  `json:"commit_sha"`
-	SubPath       *Scalar `json:"sub_path,omitempty"`
+	RepositoryURL string  `json:"repository_url"`
+	CommitSha     string  `json:"commit_sha"`
+	SubPath       *string `json:"sub_path,omitempty"`
 }
 
 // GithubPluginPreview is the 0.7.8 IDL struct GithubPluginPreview.
@@ -1591,8 +1591,8 @@ type RenderExtensionResp struct {
 // ExtensionViewport is the 0.7.8 IDL struct ExtensionViewport.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ExtensionViewport struct {
-	Width  *Scalar `json:"width,omitempty"`
-	Height *Scalar `json:"height,omitempty"`
+	Width  *Number `json:"width,omitempty"`
+	Height *Number `json:"height,omitempty"`
 }
 
 // ExtensionGestureResp is the 0.7.8 IDL struct ExtensionGestureResp.
@@ -1613,21 +1613,21 @@ type ExtensionAckResp struct {
 // ExtensionComposerSuggestAnswer is the 0.7.8 IDL struct ExtensionComposerSuggestAnswer.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ExtensionComposerSuggestAnswer struct {
-	Shown  Scalar  `json:"shown"`
-	Reason *Scalar `json:"reason,omitempty"`
+	Shown  bool    `json:"shown"`
+	Reason *string `json:"reason,omitempty"`
 }
 
 // ExtensionComposerReadAnswer is the 0.7.8 IDL struct ExtensionComposerReadAnswer.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ExtensionComposerReadAnswer struct {
-	Draft Scalar `json:"draft"`
+	Draft string `json:"draft"`
 }
 
 // ExtensionComposerFillAnswer is the 0.7.8 IDL struct ExtensionComposerFillAnswer.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ExtensionComposerFillAnswer struct {
-	Written Scalar  `json:"written"`
-	Reason  *Scalar `json:"reason,omitempty"`
+	Written bool    `json:"written"`
+	Reason  *string `json:"reason,omitempty"`
 }
 
 // PackShareWorkResp is the 0.7.8 IDL struct PackShareWorkResp.
@@ -1861,14 +1861,14 @@ type LocalMCPServerDetail struct {
 // LocalMCPServerConfig is the 0.7.8 IDL struct LocalMcpServerConfig.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type LocalMCPServerConfig struct {
-	Transport   Scalar               `json:"transport"`
-	Command     *Scalar              `json:"command,omitempty"`
-	Args        []Scalar             `json:"args,omitempty"`
+	Transport   string               `json:"transport"`
+	Command     *string              `json:"command,omitempty"`
+	Args        []string             `json:"args,omitempty"`
 	Env         []LocalMCPKeyValue   `json:"env,omitempty"`
-	URL         *Scalar              `json:"url,omitempty"`
+	URL         *string              `json:"url,omitempty"`
 	Headers     []LocalMCPKeyValue   `json:"headers,omitempty"`
-	TimeoutMs   *Scalar              `json:"timeout_ms,omitempty"`
-	Description *Scalar              `json:"description,omitempty"`
+	TimeoutMs   *Number              `json:"timeout_ms,omitempty"`
+	Description *string              `json:"description,omitempty"`
 	OAuth       *LocalMCPOAuthConfig `json:"oauth,omitempty"`
 }
 
@@ -1967,13 +1967,13 @@ type LocalMCPAuthState struct {
 // LocalMCPAuthTarget is the 0.7.8 IDL struct LocalMcpAuthTarget.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type LocalMCPAuthTarget struct {
-	Kind              Scalar  `json:"kind"`
-	ServerName        Scalar  `json:"server_name"`
-	PluginName        *Scalar `json:"plugin_name,omitempty"`
-	PluginSource      *Scalar `json:"plugin_source,omitempty"`
-	SessionID         *Scalar `json:"session_id,omitempty"`
-	WorkspaceRoot     *Scalar `json:"workspace_root,omitempty"`
-	PluginMarketplace *Scalar `json:"plugin_marketplace,omitempty"`
+	Kind              string  `json:"kind"`
+	ServerName        string  `json:"server_name"`
+	PluginName        *string `json:"plugin_name,omitempty"`
+	PluginSource      *string `json:"plugin_source,omitempty"`
+	SessionID         *string `json:"session_id,omitempty"`
+	WorkspaceRoot     *string `json:"workspace_root,omitempty"`
+	PluginMarketplace *string `json:"plugin_marketplace,omitempty"`
 }
 
 // TestLocalMCPAuthTargetResp is the 0.7.8 IDL struct TestLocalMcpAuthTargetResp.
@@ -2064,12 +2064,12 @@ type LocalHookItem struct {
 // LocalHookDefinition is the 0.7.8 IDL struct LocalHookDefinition.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type LocalHookDefinition struct {
-	Event          Scalar  `json:"event"`
-	Matcher        *Scalar `json:"matcher,omitempty"`
-	Command        Scalar  `json:"command"`
-	CommandWindows *Scalar `json:"command_windows,omitempty"`
-	TimeoutSeconds *Scalar `json:"timeout_seconds,omitempty"`
-	Name           *Scalar `json:"name,omitempty"`
+	Event          string  `json:"event"`
+	Matcher        *string `json:"matcher,omitempty"`
+	Command        string  `json:"command"`
+	CommandWindows *string `json:"command_windows,omitempty"`
+	TimeoutSeconds *Number `json:"timeout_seconds,omitempty"`
+	Name           *string `json:"name,omitempty"`
 }
 
 // CreateLocalHookResp is the 0.7.8 IDL struct CreateLocalHookResp.
@@ -2290,11 +2290,11 @@ type ListModelsResp struct {
 // SessionAdvisorView is the 0.7.8 IDL struct SessionAdvisorView.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type SessionAdvisorView struct {
-	Enabled      Scalar              `json:"enabled"`
-	ProviderID   *Scalar             `json:"provider_id,omitempty"`
-	ModelID      *Scalar             `json:"model_id,omitempty"`
+	Enabled      bool                `json:"enabled"`
+	ProviderID   *string             `json:"provider_id,omitempty"`
+	ModelID      *string             `json:"model_id,omitempty"`
 	Thinking     *ModelThinkingInput `json:"thinking,omitempty"`
-	ContextLimit *Scalar             `json:"context_limit,omitempty"`
+	ContextLimit *Number             `json:"context_limit,omitempty"`
 }
 
 // SelectModelResp is the 0.7.8 IDL struct SelectModelResp.
@@ -2413,15 +2413,15 @@ type TestModelProviderResp struct {
 // UserModelProviderCandidate is the 0.7.8 IDL struct UserModelProviderCandidate.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type UserModelProviderCandidate struct {
-	ProviderID       *Scalar           `json:"provider_id,omitempty"`
-	ExpectedRevision *Scalar           `json:"expected_revision,omitempty"`
-	Name             *Scalar           `json:"name,omitempty"`
-	BaseURL          Scalar            `json:"base_url"`
-	APIKey           *Scalar           `json:"api_key,omitempty"`
-	APIFormat        *Scalar           `json:"api_format,omitempty"`
+	ProviderID       *string           `json:"provider_id,omitempty"`
+	ExpectedRevision *string           `json:"expected_revision,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	BaseURL          string            `json:"base_url"`
+	APIKey           *string           `json:"api_key,omitempty"`
+	APIFormat        *string           `json:"api_format,omitempty"`
 	Models           []UserModelInput  `json:"models,omitempty"`
-	Headers          map[string]Scalar `json:"headers,omitempty"`
-	RemoveHeaders    []Scalar          `json:"remove_headers,omitempty"`
+	Headers          map[string]string `json:"headers,omitempty"`
+	RemoveHeaders    []string          `json:"remove_headers,omitempty"`
 	APIKeys          []APIKeyDraft     `json:"api_keys,omitempty"`
 }
 
@@ -2531,11 +2531,11 @@ type BunnyGreetingResult struct {
 // BunnyTaskModel is the 0.7.8 IDL struct BunnyTaskModel.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type BunnyTaskModel struct {
-	ProviderID   Scalar  `json:"provider_id"`
-	ModelID      Scalar  `json:"model_id"`
-	Variant      *Scalar `json:"variant,omitempty"`
-	Effort       *Scalar `json:"effort,omitempty"`
-	ContextLimit *Scalar `json:"context_limit,omitempty"`
+	ProviderID   string  `json:"provider_id"`
+	ModelID      string  `json:"model_id"`
+	Variant      *string `json:"variant,omitempty"`
+	Effort       *string `json:"effort,omitempty"`
+	ContextLimit *Number `json:"context_limit,omitempty"`
 }
 
 // ResetBunnyResp is the 0.7.8 IDL struct ResetBunnyResp.
@@ -2942,16 +2942,16 @@ type CreateAgentResp struct {
 // AgentConfiguredDefinition is the 0.7.8 IDL struct AgentConfiguredDefinition.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type AgentConfiguredDefinition struct {
-	Name            Scalar                      `json:"name"`
-	Description     Scalar                      `json:"description"`
-	Model           *Scalar                     `json:"model,omitempty"`
-	Effort          *Scalar                     `json:"effort,omitempty"`
-	Tools           []Scalar                    `json:"tools,omitempty"`
-	DisallowedTools []Scalar                    `json:"disallowed_tools,omitempty"`
-	MCPServers      []Scalar                    `json:"mcp_servers,omitempty"`
-	Skills          []Scalar                    `json:"skills,omitempty"`
+	Name            string                      `json:"name"`
+	Description     string                      `json:"description"`
+	Model           *string                     `json:"model,omitempty"`
+	Effort          *string                     `json:"effort,omitempty"`
+	Tools           []string                    `json:"tools,omitempty"`
+	DisallowedTools []string                    `json:"disallowed_tools,omitempty"`
+	MCPServers      []string                    `json:"mcp_servers,omitempty"`
+	Skills          []string                    `json:"skills,omitempty"`
 	Mavis           *AgentConfiguredMavisFields `json:"mavis,omitempty"`
-	SystemPrompt    Scalar                      `json:"system_prompt"`
+	SystemPrompt    string                      `json:"system_prompt"`
 }
 
 // AgentConfiguredMavisFields is the 0.7.8 IDL struct AgentConfiguredMavisFields.
@@ -3292,29 +3292,29 @@ type CronTask struct {
 // CronSessionConfig is the 0.7.8 IDL struct CronSessionConfig.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CronSessionConfig struct {
-	Mode         *Scalar `json:"mode,omitempty"`
-	SessionID    *Scalar `json:"session_id,omitempty"`
-	KeepSessions *Scalar `json:"keep_sessions,omitempty"`
+	Mode         *string `json:"mode,omitempty"`
+	SessionID    *string `json:"session_id,omitempty"`
+	KeepSessions *Number `json:"keep_sessions,omitempty"`
 }
 
 // ActiveHours is the 0.7.8 IDL struct ActiveHours.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ActiveHours struct {
-	Start *Scalar `json:"start,omitempty"`
-	End   *Scalar `json:"end,omitempty"`
+	Start *string `json:"start,omitempty"`
+	End   *string `json:"end,omitempty"`
 }
 
 // ModelSelectionInput is the 0.7.8 IDL struct ModelSelectionInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ModelSelectionInput struct {
-	ProviderID      *Scalar             `json:"provider_id,omitempty"`
-	ModelID         *Scalar             `json:"model_id,omitempty"`
-	Variant         *Scalar             `json:"variant,omitempty"`
-	Reasoning       *Scalar             `json:"reasoning,omitempty"`
+	ProviderID      *string             `json:"provider_id,omitempty"`
+	ModelID         *string             `json:"model_id,omitempty"`
+	Variant         *string             `json:"variant,omitempty"`
+	Reasoning       *bool               `json:"reasoning,omitempty"`
 	Thinking        *ModelThinkingInput `json:"thinking,omitempty"`
-	ContextLimit    *Scalar             `json:"context_limit,omitempty"`
-	ContextWindow   *Scalar             `json:"context_window,omitempty"`
-	MaxOutputTokens *Scalar             `json:"max_output_tokens,omitempty"`
+	ContextLimit    *Number             `json:"context_limit,omitempty"`
+	ContextWindow   *Number             `json:"context_window,omitempty"`
+	MaxOutputTokens *Number             `json:"max_output_tokens,omitempty"`
 }
 
 // ListCronSessionsResp is the 0.7.8 IDL struct ListCronSessionsResp.
@@ -3437,17 +3437,17 @@ type CronDefinition struct {
 // CronSchedule is the 0.7.8 IDL struct CronSchedule.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CronSchedule struct {
-	Expression *Scalar `json:"expression,omitempty"`
-	Timezone   *Scalar `json:"timezone,omitempty"`
-	Kind       Scalar  `json:"kind"`
-	RunAtMs    *Scalar `json:"run_at_ms,omitempty"`
+	Expression *string `json:"expression,omitempty"`
+	Timezone   *string `json:"timezone,omitempty"`
+	Kind       string  `json:"kind"`
+	RunAtMs    *Number `json:"run_at_ms,omitempty"`
 }
 
 // CronSessionTarget is the 0.7.8 IDL struct CronSessionTarget.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CronSessionTarget struct {
-	Mode      Scalar  `json:"mode"`
-	SessionID *Scalar `json:"session_id,omitempty"`
+	Mode      string  `json:"mode"`
+	SessionID *string `json:"session_id,omitempty"`
 }
 
 // GetCronDefinitionResp is the 0.7.8 IDL struct GetCronDefinitionResp.
@@ -3703,9 +3703,9 @@ type ChannelRoutingTargetView struct {
 // ProjectRef is the 0.7.8 IDL struct ProjectRef.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ProjectRef struct {
-	Key          *Scalar `json:"key,omitempty"`
-	ProjectID    *Scalar `json:"project_id,omitempty"`
-	WorkspaceDir *Scalar `json:"workspace_dir,omitempty"`
+	Key          *string `json:"key,omitempty"`
+	ProjectID    *Number `json:"project_id,omitempty"`
+	WorkspaceDir *string `json:"workspace_dir,omitempty"`
 }
 
 // ListChannelConnectionsResp is the 0.7.8 IDL struct ListChannelConnectionsResp.
@@ -3797,11 +3797,11 @@ type UpdateChannelBindingTargetResp struct {
 // ChannelRoutingTargetInput is the 0.7.8 IDL struct ChannelRoutingTargetInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ChannelRoutingTargetInput struct {
-	AgentName       Scalar      `json:"agent_name"`
+	AgentName       string      `json:"agent_name"`
 	Project         *ProjectRef `json:"project"`
-	RoutingMode     Scalar      `json:"routing_mode"`
-	SessionID       *Scalar     `json:"session_id,omitempty"`
-	OwnerInstanceID *Scalar     `json:"owner_instance_id,omitempty"`
+	RoutingMode     string      `json:"routing_mode"`
+	SessionID       *string     `json:"session_id,omitempty"`
+	OwnerInstanceID *string     `json:"owner_instance_id,omitempty"`
 }
 
 // BindTelegramResp is the 0.7.8 IDL struct BindTelegramResp.
@@ -3911,12 +3911,12 @@ type BeginQuestionnaireResp struct {
 // AskUserToolInput is the 0.7.8 IDL struct AskUserToolInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type AskUserToolInput struct {
-	Title                    *Scalar                `json:"title,omitempty"`
+	Title                    *string                `json:"title,omitempty"`
 	Steps                    []AskUserToolStepInput `json:"steps,omitempty"`
-	Mode                     *Scalar                `json:"mode,omitempty"`
+	Mode                     *string                `json:"mode,omitempty"`
 	ModePayload              *AskUserModePayload    `json:"mode_payload,omitempty"`
-	RequiresExplicitResponse *Scalar                `json:"requires_explicit_response,omitempty"`
-	Async                    *Scalar                `json:"async,omitempty"`
+	RequiresExplicitResponse *bool                  `json:"requires_explicit_response,omitempty"`
+	Async                    *bool                  `json:"async,omitempty"`
 }
 
 // AskUserToolStepInput is the 0.7.8 IDL struct AskUserToolStepInput.
@@ -4190,8 +4190,8 @@ type SkillInfo struct {
 // ListPageParam is the 0.7.8 IDL struct ListPageParam.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ListPageParam struct {
-	Cursor *Scalar `json:"cursor,omitempty"`
-	Limit  *Scalar `json:"limit,omitempty"`
+	Cursor *string `json:"cursor,omitempty"`
+	Limit  *Number `json:"limit,omitempty"`
 }
 
 // ListSkillHubResp is the 0.7.8 IDL struct ListSkillHubResp.
@@ -4459,11 +4459,11 @@ type CreateSessionResp struct {
 // RunLocationInput is the 0.7.8 IDL struct RunLocationInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type RunLocationInput struct {
-	Mode              *Scalar `json:"mode,omitempty"`
-	WorktreeDir       *Scalar `json:"worktree_dir,omitempty"`
-	Branch            *Scalar `json:"branch,omitempty"`
-	NewWorktreeBranch *Scalar `json:"new_worktree_branch,omitempty"`
-	NewWorktreeBase   *Scalar `json:"new_worktree_base,omitempty"`
+	Mode              *string `json:"mode,omitempty"`
+	WorktreeDir       *string `json:"worktree_dir,omitempty"`
+	Branch            *string `json:"branch,omitempty"`
+	NewWorktreeBranch *string `json:"new_worktree_branch,omitempty"`
+	NewWorktreeBase   *string `json:"new_worktree_base,omitempty"`
 }
 
 // GetSessionTreeResp is the 0.7.8 IDL struct GetSessionTreeResp.
@@ -4608,8 +4608,8 @@ type UpdateSessionResp struct {
 // SessionMemoryPolicyInput is the 0.7.8 IDL struct SessionMemoryPolicyInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type SessionMemoryPolicyInput struct {
-	RecallEnabled *Scalar `json:"recall_enabled,omitempty"`
-	WriteEnabled  *Scalar `json:"write_enabled,omitempty"`
+	RecallEnabled *bool `json:"recall_enabled,omitempty"`
+	WriteEnabled  *bool `json:"write_enabled,omitempty"`
 }
 
 // GetSessionUsageResp is the 0.7.8 IDL struct GetSessionUsageResp.
@@ -4741,13 +4741,13 @@ type SideChatMutationResult struct {
 // ReviewRequest is the 0.7.8 IDL struct ReviewRequest.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ReviewRequest struct {
-	Scope Scalar `json:"scope"`
+	Scope string `json:"scope"`
 }
 
 // ComputerUseInput is the 0.7.8 IDL struct ComputerUseInput.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ComputerUseInput struct {
-	Enable Scalar `json:"enable"`
+	Enable bool `json:"enable"`
 }
 
 // GetMessagesResp is the 0.7.8 IDL struct GetMessagesResp.
@@ -5208,10 +5208,10 @@ type SendRemoteMessageResp struct {
 // RemoteMessageSender is the 0.7.8 IDL struct RemoteMessageSender.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type RemoteMessageSender struct {
-	SessionID  Scalar  `json:"session_id"`
-	DeviceName *Scalar `json:"device_name,omitempty"`
-	AgentName  *Scalar `json:"agent_name,omitempty"`
-	Title      *Scalar `json:"title,omitempty"`
+	SessionID  string  `json:"session_id"`
+	DeviceName *string `json:"device_name,omitempty"`
+	AgentName  *string `json:"agent_name,omitempty"`
+	Title      *string `json:"title,omitempty"`
 }
 
 // ListQueueMessagesResp is the 0.7.8 IDL struct ListQueueMessagesResp.
@@ -6458,9 +6458,9 @@ type CreateWorktreeResp struct {
 // CreateWorktreeOptions is the 0.7.8 IDL struct CreateWorktreeOptions.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CreateWorktreeOptions struct {
-	Branch  *Scalar `json:"branch,omitempty"`
-	DirName *Scalar `json:"dir_name,omitempty"`
-	Base    *Scalar `json:"base,omitempty"`
+	Branch  *string `json:"branch,omitempty"`
+	DirName *string `json:"dir_name,omitempty"`
+	Base    *string `json:"base,omitempty"`
 }
 
 // RemoveWorktreeResp is the 0.7.8 IDL struct RemoveWorktreeResp.
@@ -6570,13 +6570,13 @@ type ResolveAnnotationTargetResp struct {
 // ReviewLineRangeTarget is the 0.7.8 IDL struct ReviewLineRangeTarget.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ReviewLineRangeTarget struct {
-	Path             Scalar                     `json:"path"`
-	Side             Scalar                     `json:"side"`
-	StartLine        Scalar                     `json:"start_line"`
-	EndLine          Scalar                     `json:"end_line"`
-	ExpectedRevision *Scalar                    `json:"expected_revision,omitempty"`
-	ContextBefore    *Scalar                    `json:"context_before,omitempty"`
-	ContextAfter     *Scalar                    `json:"context_after,omitempty"`
+	Path             string                     `json:"path"`
+	Side             string                     `json:"side"`
+	StartLine        Number                     `json:"start_line"`
+	EndLine          Number                     `json:"end_line"`
+	ExpectedRevision *string                    `json:"expected_revision,omitempty"`
+	ContextBefore    *Number                    `json:"context_before,omitempty"`
+	ContextAfter     *Number                    `json:"context_after,omitempty"`
 	RelatedChange    *ReviewRelatedChangeTarget `json:"related_change,omitempty"`
 }
 
@@ -6593,8 +6593,8 @@ type ReviewRelatedChangeTarget struct {
 // ReviewDeletedFileTarget is the 0.7.8 IDL struct ReviewDeletedFileTarget.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type ReviewDeletedFileTarget struct {
-	Path         Scalar `json:"path"`
-	BlobRevision Scalar `json:"blob_revision"`
+	Path         string `json:"path"`
+	BlobRevision string `json:"blob_revision"`
 }
 
 // ListDeployedWebsitesResp is the 0.7.8 IDL struct ListDeployedWebsitesResp.
@@ -7038,9 +7038,9 @@ type GetWorkspaceReviewSummaryResp struct {
 // WorkspaceReviewSourceView is the 0.7.8 IDL struct WorkspaceReviewSourceView.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type WorkspaceReviewSourceView struct {
-	Type      Scalar  `json:"type"`
-	BaseRef   *Scalar `json:"base_ref,omitempty"`
-	CommitSha *Scalar `json:"commit_sha,omitempty"`
+	Type      string  `json:"type"`
+	BaseRef   *string `json:"base_ref,omitempty"`
+	CommitSha *string `json:"commit_sha,omitempty"`
 }
 
 // WorkspaceReviewFileView is the 0.7.8 IDL struct WorkspaceReviewFileView.
@@ -7164,19 +7164,19 @@ type SidebarSessionEntry struct {
 // SidebarFilter is the 0.7.8 IDL struct SidebarFilter.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type SidebarFilter struct {
-	Types                    []Scalar `json:"types,omitempty"`
-	Statuses                 []Scalar `json:"statuses,omitempty"`
-	AgentNames               []Scalar `json:"agent_names,omitempty"`
-	ActivityDays             *Scalar  `json:"activity_days,omitempty"`
-	ShowBunnyCreatedSessions *Scalar  `json:"show_bunny_created_sessions,omitempty"`
+	Types                    []string `json:"types,omitempty"`
+	Statuses                 []string `json:"statuses,omitempty"`
+	AgentNames               []string `json:"agent_names,omitempty"`
+	ActivityDays             *Number  `json:"activity_days,omitempty"`
+	ShowBunnyCreatedSessions *bool    `json:"show_bunny_created_sessions,omitempty"`
 }
 
 // SidebarQueryScope is the 0.7.8 IDL struct SidebarQueryScope.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type SidebarQueryScope struct {
-	UnreadSessionIds   []Scalar `json:"unread_session_ids,omitempty"`
-	ExcludedSessionIds []Scalar `json:"excluded_session_ids,omitempty"`
-	ExcludedProjectIds []Scalar `json:"excluded_project_ids,omitempty"`
+	UnreadSessionIds   []string `json:"unread_session_ids,omitempty"`
+	ExcludedSessionIds []string `json:"excluded_session_ids,omitempty"`
+	ExcludedProjectIds []Number `json:"excluded_project_ids,omitempty"`
 }
 
 // QuerySidebarProjectSessionsResp is the 0.7.8 IDL struct QuerySidebarProjectSessionsResp.
@@ -7860,7 +7860,7 @@ type GetAgentShellStatusReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type PutAgentShellPreferenceReq struct {
-	Preference Scalar   `json:"preference"`
+	Preference string   `json:"preference"`
 	BaseReq    *BaseReq `json:"base_req,omitempty"`
 }
 
@@ -7932,12 +7932,12 @@ type ListMarketplacePluginsReq struct {
 	Cursor          *string `json:"cursor,omitempty"`
 	Limit           *Number `json:"limit,omitempty"`
 	Keyword         *string `json:"keyword,omitempty"`
-	Category        *Scalar `json:"category,omitempty"`
+	Category        *string `json:"category,omitempty"`
 	SkillCursor     *string `json:"skill_cursor,omitempty"`
 	SkillLimit      *Number `json:"skill_limit,omitempty"`
-	Source          *Scalar `json:"source,omitempty"`
-	SkillSourceType *Scalar `json:"skill_source_type,omitempty"`
-	SkillSortType   *Scalar `json:"skill_sort_type,omitempty"`
+	Source          *string `json:"source,omitempty"`
+	SkillSourceType *string `json:"skill_source_type,omitempty"`
+	SkillSortType   *string `json:"skill_sort_type,omitempty"`
 	Marketplace     *string `json:"marketplace,omitempty"`
 }
 
@@ -7946,7 +7946,7 @@ type ListMarketplacePluginsReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type GetMarketplacePluginReq struct {
 	PluginName  string  `json:"plugin_name"`
-	Source      *Scalar `json:"source,omitempty"`
+	Source      *string `json:"source,omitempty"`
 	Marketplace *string `json:"marketplace,omitempty"`
 }
 
@@ -7970,7 +7970,7 @@ type ListEnabledPluginsReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type MutatePluginReq struct {
 	PluginName  string  `json:"plugin_name"`
-	Source      *Scalar `json:"source,omitempty"`
+	Source      *string `json:"source,omitempty"`
 	Marketplace *string `json:"marketplace,omitempty"`
 }
 
@@ -8113,7 +8113,7 @@ type CloseExtensionPaneReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type PackShareWorkReq struct {
-	Kind             Scalar  `json:"kind"`
+	Kind             string  `json:"kind"`
 	PluginName       *string `json:"plugin_name,omitempty"`
 	SkillLocationURI *string `json:"skill_location_uri,omitempty"`
 }
@@ -8266,7 +8266,7 @@ type ClearLocalMCPAuthReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListLocalHooksReq struct {
-	Scope      Scalar  `json:"scope"`
+	Scope      string  `json:"scope"`
 	ProjectDir *string `json:"project_dir,omitempty"`
 }
 
@@ -8274,7 +8274,7 @@ type ListLocalHooksReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type CreateLocalHookReq struct {
-	Scope            Scalar               `json:"scope"`
+	Scope            string               `json:"scope"`
 	ProjectDir       *string              `json:"project_dir,omitempty"`
 	ExpectedRevision string               `json:"expected_revision"`
 	Definition       *LocalHookDefinition `json:"definition"`
@@ -8285,7 +8285,7 @@ type CreateLocalHookReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type UpdateLocalHookReq struct {
 	HookID           string               `json:"hook_id"`
-	Scope            Scalar               `json:"scope"`
+	Scope            string               `json:"scope"`
 	ProjectDir       *string              `json:"project_dir,omitempty"`
 	ExpectedRevision string               `json:"expected_revision"`
 	Definition       *LocalHookDefinition `json:"definition"`
@@ -8296,7 +8296,7 @@ type UpdateLocalHookReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type DeleteLocalHookReq struct {
 	HookID           string  `json:"hook_id"`
-	Scope            Scalar  `json:"scope"`
+	Scope            string  `json:"scope"`
 	ProjectDir       *string `json:"project_dir,omitempty"`
 	ExpectedRevision string  `json:"expected_revision"`
 }
@@ -8306,7 +8306,7 @@ type DeleteLocalHookReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type SetLocalHookEnabledReq struct {
 	HookID           string  `json:"hook_id"`
-	Scope            Scalar  `json:"scope"`
+	Scope            string  `json:"scope"`
 	ProjectDir       *string `json:"project_dir,omitempty"`
 	Enabled          bool    `json:"enabled"`
 	ExpectedRevision *string `json:"expected_revision,omitempty"`
@@ -8316,7 +8316,7 @@ type SetLocalHookEnabledReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type SetLocalHookScopeEnabledReq struct {
-	Scope            Scalar  `json:"scope"`
+	Scope            string  `json:"scope"`
 	ProjectDir       *string `json:"project_dir,omitempty"`
 	Enabled          bool    `json:"enabled"`
 	ExpectedRevision *string `json:"expected_revision,omitempty"`
@@ -9010,7 +9010,7 @@ type CreateCronReq struct {
 	Enabled      *bool                `json:"enabled,omitempty"`
 	ProjectID    *Number              `json:"project_id,omitempty"`
 	Model        *ModelSelectionInput `json:"model,omitempty"`
-	ScheduleKind *Scalar              `json:"schedule_kind,omitempty"`
+	ScheduleKind *string              `json:"schedule_kind,omitempty"`
 	RunAt        *Number              `json:"run_at,omitempty"`
 	RunCount     *Number              `json:"run_count,omitempty"`
 }
@@ -9036,7 +9036,7 @@ type UpdateCronReq struct {
 	Session      *CronSessionConfig   `json:"session,omitempty"`
 	ProjectID    *Number              `json:"project_id,omitempty"`
 	Model        *ModelSelectionInput `json:"model,omitempty"`
-	ScheduleKind *Scalar              `json:"schedule_kind,omitempty"`
+	ScheduleKind *string              `json:"schedule_kind,omitempty"`
 	RunAt        *Number              `json:"run_at,omitempty"`
 	RunCount     *Number              `json:"run_count,omitempty"`
 }
@@ -9445,10 +9445,10 @@ type SkillEvolveLifecycleReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListSkillsReq struct {
 	AgentName           *string        `json:"agent_name,omitempty"`
-	Scope               *Scalar        `json:"scope,omitempty"`
+	Scope               *string        `json:"scope,omitempty"`
 	Page                *ListPageParam `json:"page,omitempty"`
 	Keyword             *string        `json:"keyword,omitempty"`
-	SourceType          *Scalar        `json:"source_type,omitempty"`
+	SourceType          *string        `json:"source_type,omitempty"`
 	ExcludeBuiltin      *bool          `json:"exclude_builtin,omitempty"`
 	IncludePluginSkills *bool          `json:"include_plugin_skills,omitempty"`
 }
@@ -9458,10 +9458,10 @@ type ListSkillsReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListSkillHubReq struct {
 	Page       *ListPageParam `json:"page,omitempty"`
-	SourceType *Scalar        `json:"source_type,omitempty"`
+	SourceType *string        `json:"source_type,omitempty"`
 	Keyword    *string        `json:"keyword,omitempty"`
-	SortType   *Scalar        `json:"sort_type,omitempty"`
-	Category   *Scalar        `json:"category,omitempty"`
+	SortType   *string        `json:"sort_type,omitempty"`
+	Category   *string        `json:"category,omitempty"`
 }
 
 // InstallSkillReq is the request for InstallSkill.
@@ -9473,7 +9473,7 @@ type InstallSkillReq struct {
 	IsFromGit           *bool        `json:"is_from_git,omitempty"`
 	DisplayName         *string      `json:"display_name,omitempty"`
 	CreatorInfo         *CreatorInfo `json:"creator_info,omitempty"`
-	PublisherSourceType *Scalar      `json:"publisher_source_type,omitempty"`
+	PublisherSourceType *string      `json:"publisher_source_type,omitempty"`
 	ObjectKey           *string      `json:"object_key,omitempty"`
 	BaseReq             *BaseReq     `json:"base_req,omitempty"`
 }
@@ -9731,7 +9731,7 @@ type CreateSessionReq struct {
 	RunLocation             *RunLocationInput    `json:"run_location,omitempty"`
 	AppMode                 *string              `json:"app_mode,omitempty"`
 	ProjectID               *Number              `json:"project_id,omitempty"`
-	SessionKind             *Scalar              `json:"session_kind,omitempty"`
+	SessionKind             *string              `json:"session_kind,omitempty"`
 	ExpectedAgentInstanceID *string              `json:"expected_agent_instance_id,omitempty"`
 	BaseReq                 *BaseReq             `json:"base_req,omitempty"`
 }
@@ -10708,7 +10708,7 @@ type CompleteMemoryV2OnboardingReq struct {
 type ReplyPermissionReq struct {
 	Name      string  `json:"name"`
 	RequestID string  `json:"request_id"`
-	Reply     Scalar  `json:"reply"`
+	Reply     string  `json:"reply"`
 	Message   *string `json:"message,omitempty"`
 }
 
@@ -10716,9 +10716,9 @@ type ReplyPermissionReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ReplyQuestionReq struct {
-	Name      string          `json:"name"`
-	RequestID string          `json:"request_id"`
-	Answers   json.RawMessage `json:"answers,omitempty"`
+	Name      string     `json:"name"`
+	RequestID string     `json:"request_id"`
+	Answers   [][]string `json:"answers,omitempty"`
 }
 
 // RejectQuestionReq is the request for RejectQuestion.
@@ -10760,7 +10760,7 @@ type DismissPermissionReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type BatchReplyPermissionsReq struct {
 	RequestIds []string `json:"request_ids"`
-	Decision   Scalar   `json:"decision"`
+	Decision   string   `json:"decision"`
 }
 
 // ListFileTreeReq is the request for ListWorkspaceFileTree.

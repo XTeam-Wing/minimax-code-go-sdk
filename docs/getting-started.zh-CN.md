@@ -67,4 +67,6 @@ _, err = client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 470 个 DesktopService 方法都有具名 Go API，见 [method-inventory.md](method-inventory.md)。英文说明见 [api.md](api.md) 和仓库根目录的 README。
 
-响应里 IDL 只标记了 `scalar`、没有 TypeScript 类型的字段，类型是 `desktop.Scalar`，原始 JSON 会保留。生成结果里这类字段有 2971 个；已经声明 Go 类型的字段有 1991 个。请求结构体反过来，1358 个字段有声明类型，只有 33 个是 `Scalar`。不要把 `Scalar` 当成已经冻结的 string 或 number。
+470 个 IDL 方法是冻结的 DesktopService 表面。进程另外还提供 `/mavis/api/...` 分发叶子（权限、内容安全、浏览器、通信、cron、matrix、用量、文件、git、fs、runtime、diagnostics），在 `mavis.Client` 上有具名方法。`mavis.Raw` 只用于这份叶子清单之外的路径。
+
+请求字段里已经没有 `Scalar`。原先 33 个别名（例如 `PermissionReply`、`LocalHookScope`）在绑定里是 scalar，而且不是 number/boolean，所以 Go 类型是 `string`。响应和嵌套结构里仍有 2818 个 `Scalar`：schema 只写了 `kind: scalar`，绑定和 `structFields` 都没有给出唯一的 `tsType`。Drive 的 13 个方法返回 `DriveGatewayResp`（校验过的 `base_resp`，其余 JSON 在 `Raw`），因为这条路径不走 IDL 响应编码器。

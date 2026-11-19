@@ -3,6 +3,7 @@ package appserver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,7 +17,7 @@ import (
 // TestLiveAppServer drives the official @minimax-ai/code app-server.
 // It is not a mock. Set MCODE_E2E=1 and point MCODE_BIN / MCODE_LEADING at the
 // installed CLI. The test uses a temporary data directory and workspace and
-// only calls read-only methods.
+// only calls read-only methods plus creating and aborting one local session. It does not send a model turn.
 func TestLiveAppServer(t *testing.T) {
 	if os.Getenv("MCODE_E2E") != "1" {
 		t.Skip("set MCODE_E2E=1 to run the official app-server")
@@ -92,14 +93,40 @@ func TestLiveAppServer(t *testing.T) {
 		t.Fatalf("mavis health: %v", err)
 	}
 	t.Logf("mavis health status=%s runtime=%s", health.Status, health.Runtime)
-	streamCtx, streamCancel := context.WithTimeout(ctx, 5*time.Second)
+	streamCtx, streamCancel := context.WithTimeout(ctx, 3*time.Second)
 	stream, err := client.Desktop().SubscribeGlobalEvents(streamCtx, desktop.SubscribeGlobalEventsReq{})
 	if err != nil {
 		t.Fatalf("SubscribeGlobalEvents: %v", err)
 	}
+	eventCount := 0
+	for {
+		frame, err := stream.Recv(streamCtx)
+		if err != nil {
+			if streamCtx.Err() == nil && !errors.Is(err, io.EOF) {
+				t.Fatalf("event recv: %v", err)
+			}
+			break
+		}
+		eventCount++
+		got := desktop.Interpret(frame)
+		t.Logf("event type=%q hasType=%v kind=%q", got.Type, got.HasType, got.Kind)
+		if eventCount >= 5 {
+			break
+		}
+	}
 	streamCancel()
-	_ = stream.Close()
-	t.Log("event subscription opened and aborted")
+	if err := stream.Close(); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("event subscription received %d frame(s) then closed", eventCount)
+	missing, err := client.Desktop().RawCall(ctx, "GET", "/minimax-desktop/api/v1/does-not-exist", nil, nil)
+	if err != nil {
+		t.Fatalf("raw transport: %v", err)
+	}
+	if missing.Status < 400 {
+		t.Fatalf("expected an error status for an unknown path, got %d %s", missing.Status, missing.Body)
+	}
+	t.Logf("unknown path status=%d", missing.Status)
 }
 
 func TestLiveUnixHealth(t *testing.T) {

@@ -483,7 +483,13 @@ func (c *Client) answerServer(msg inbound) {
 			result = value
 		}
 	} else {
-		rpcErr = &Error{Code: CodeMethodNotFound, Message: "Unknown app-server method: " + msg.method}
+		// A missing handler denies the request. It must not return a successful
+		// result, which a caller could treat as approval.
+		rpcErr = &Error{
+			Code:    CodeMethodNotFound,
+			Message: "denied: no handler is registered for " + msg.method,
+			Data:    json.RawMessage(`{"decision":"deny"}`),
+		}
 	}
 	resp := wireMessage{JSONRPC: "2.0", ID: msg.id}
 	if rpcErr != nil {

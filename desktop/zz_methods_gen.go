@@ -3284,24 +3284,33 @@ func (c *Client) ResolveAnnotationTarget(ctx context.Context, req ResolveAnnotat
 // Inventory DesktopService.ListDeployedWebsites. Transport metadataOnly.
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
-func (c *Client) ListDeployedWebsites(ctx context.Context, req ListDeployedWebsitesReq) (ListDeployedWebsitesResp, error) {
-	return callUnary[ListDeployedWebsitesResp](c, ctx, specByName["ListDeployedWebsites"], req)
+func (c *Client) ListDeployedWebsites(ctx context.Context, req ListDeployedWebsitesReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("ListDeployedWebsites", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["ListDeployedWebsites"], req)
 }
 
 // GetWebsiteTrafficStats calls GET /minimax-desktop/api/v1/drive/file/:node_id/traffic.
 // Inventory DesktopService.GetWebsiteTrafficStats. Transport metadataOnly.
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
-func (c *Client) GetWebsiteTrafficStats(ctx context.Context, req GetWebsiteTrafficStatsReq) (GetWebsiteTrafficStatsResp, error) {
-	return callUnary[GetWebsiteTrafficStatsResp](c, ctx, specByName["GetWebsiteTrafficStats"], req)
+func (c *Client) GetWebsiteTrafficStats(ctx context.Context, req GetWebsiteTrafficStatsReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("GetWebsiteTrafficStats", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["GetWebsiteTrafficStats"], req)
 }
 
 // GetWebsiteState calls GET /minimax-desktop/api/v1/drive/file/:node_id/website-settings.
 // Inventory DesktopService.GetWebsiteState. Transport metadataOnly.
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
-func (c *Client) GetWebsiteState(ctx context.Context, req GetWebsiteStateReq) (GetWebsiteStateResp, error) {
-	return callUnary[GetWebsiteStateResp](c, ctx, specByName["GetWebsiteState"], req)
+func (c *Client) GetWebsiteState(ctx context.Context, req GetWebsiteStateReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("GetWebsiteState", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["GetWebsiteState"], req)
 }
 
 // CancelWebsiteDeployment calls DELETE /minimax-desktop/api/v1/drive/file/:node_id/website-settings.
@@ -3309,8 +3318,11 @@ func (c *Client) GetWebsiteState(ctx context.Context, req GetWebsiteStateReq) (G
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) CancelWebsiteDeployment(ctx context.Context, req CancelWebsiteDeploymentReq) (CancelWebsiteDeploymentResp, error) {
-	return callUnary[CancelWebsiteDeploymentResp](c, ctx, specByName["CancelWebsiteDeployment"], req)
+func (c *Client) CancelWebsiteDeployment(ctx context.Context, req CancelWebsiteDeploymentReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("CancelWebsiteDeployment", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["CancelWebsiteDeployment"], req)
 }
 
 // UnpublishWebsiteDeployment calls POST /minimax-desktop/api/v1/drive/file/:node_id/website-settings/unpublish.
@@ -3318,8 +3330,11 @@ func (c *Client) CancelWebsiteDeployment(ctx context.Context, req CancelWebsiteD
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) UnpublishWebsiteDeployment(ctx context.Context, req UnpublishWebsiteDeploymentReq) (UnpublishWebsiteDeploymentResp, error) {
-	return callUnary[UnpublishWebsiteDeploymentResp](c, ctx, specByName["UnpublishWebsiteDeployment"], req)
+func (c *Client) UnpublishWebsiteDeployment(ctx context.Context, req UnpublishWebsiteDeploymentReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("UnpublishWebsiteDeployment", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["UnpublishWebsiteDeployment"], req)
 }
 
 // RepublishWebsiteDeployment calls POST /minimax-desktop/api/v1/drive/file/:node_id/website-settings/republish.
@@ -3327,8 +3342,11 @@ func (c *Client) UnpublishWebsiteDeployment(ctx context.Context, req UnpublishWe
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) RepublishWebsiteDeployment(ctx context.Context, req RepublishWebsiteDeploymentReq) (RepublishWebsiteDeploymentResp, error) {
-	return callUnary[RepublishWebsiteDeploymentResp](c, ctx, specByName["RepublishWebsiteDeployment"], req)
+func (c *Client) RepublishWebsiteDeployment(ctx context.Context, req RepublishWebsiteDeploymentReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("RepublishWebsiteDeployment", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["RepublishWebsiteDeployment"], req)
 }
 
 // UpdateWebsiteWatermark calls PUT /minimax-desktop/api/v1/drive/file/:node_id/website-settings/watermark.
@@ -3336,8 +3354,11 @@ func (c *Client) RepublishWebsiteDeployment(ctx context.Context, req RepublishWe
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) UpdateWebsiteWatermark(ctx context.Context, req UpdateWebsiteWatermarkReq) (UpdateWebsiteWatermarkResp, error) {
-	return callUnary[UpdateWebsiteWatermarkResp](c, ctx, specByName["UpdateWebsiteWatermark"], req)
+func (c *Client) UpdateWebsiteWatermark(ctx context.Context, req UpdateWebsiteWatermarkReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("UpdateWebsiteWatermark", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["UpdateWebsiteWatermark"], req)
 }
 
 // UpdateWebsiteDisplayName calls PUT /minimax-desktop/api/v1/drive/file/:node_id/website-settings/name.
@@ -3345,8 +3366,11 @@ func (c *Client) UpdateWebsiteWatermark(ctx context.Context, req UpdateWebsiteWa
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) UpdateWebsiteDisplayName(ctx context.Context, req UpdateWebsiteDisplayNameReq) (UpdateWebsiteDisplayNameResp, error) {
-	return callUnary[UpdateWebsiteDisplayNameResp](c, ctx, specByName["UpdateWebsiteDisplayName"], req)
+func (c *Client) UpdateWebsiteDisplayName(ctx context.Context, req UpdateWebsiteDisplayNameReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("UpdateWebsiteDisplayName", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["UpdateWebsiteDisplayName"], req)
 }
 
 // SetWebsiteAlias calls PUT /minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias.
@@ -3354,8 +3378,11 @@ func (c *Client) UpdateWebsiteDisplayName(ctx context.Context, req UpdateWebsite
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) SetWebsiteAlias(ctx context.Context, req SetWebsiteAliasReq) (SetWebsiteAliasResp, error) {
-	return callUnary[SetWebsiteAliasResp](c, ctx, specByName["SetWebsiteAlias"], req)
+func (c *Client) SetWebsiteAlias(ctx context.Context, req SetWebsiteAliasReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("SetWebsiteAlias", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["SetWebsiteAlias"], req)
 }
 
 // CheckWebsiteAliasAvailability calls POST /minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias/check.
@@ -3363,8 +3390,11 @@ func (c *Client) SetWebsiteAlias(ctx context.Context, req SetWebsiteAliasReq) (S
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) CheckWebsiteAliasAvailability(ctx context.Context, req CheckWebsiteAliasAvailabilityReq) (CheckWebsiteAliasAvailabilityResp, error) {
-	return callUnary[CheckWebsiteAliasAvailabilityResp](c, ctx, specByName["CheckWebsiteAliasAvailability"], req)
+func (c *Client) CheckWebsiteAliasAvailability(ctx context.Context, req CheckWebsiteAliasAvailabilityReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("CheckWebsiteAliasAvailability", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["CheckWebsiteAliasAvailability"], req)
 }
 
 // UnbindWebsiteAlias calls POST /minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias/unbind.
@@ -3372,8 +3402,11 @@ func (c *Client) CheckWebsiteAliasAvailability(ctx context.Context, req CheckWeb
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) UnbindWebsiteAlias(ctx context.Context, req UnbindWebsiteAliasReq) (UnbindWebsiteAliasResp, error) {
-	return callUnary[UnbindWebsiteAliasResp](c, ctx, specByName["UnbindWebsiteAlias"], req)
+func (c *Client) UnbindWebsiteAlias(ctx context.Context, req UnbindWebsiteAliasReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("UnbindWebsiteAlias", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["UnbindWebsiteAlias"], req)
 }
 
 // RemoveWebsiteAlias calls DELETE /minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias.
@@ -3381,16 +3414,22 @@ func (c *Client) UnbindWebsiteAlias(ctx context.Context, req UnbindWebsiteAliasR
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
 // The SDK does not replay this call after a lost response or reconnect.
-func (c *Client) RemoveWebsiteAlias(ctx context.Context, req RemoveWebsiteAliasReq) (RemoveWebsiteAliasResp, error) {
-	return callUnary[RemoveWebsiteAliasResp](c, ctx, specByName["RemoveWebsiteAlias"], req)
+func (c *Client) RemoveWebsiteAlias(ctx context.Context, req RemoveWebsiteAliasReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("RemoveWebsiteAlias", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["RemoveWebsiteAlias"], req)
 }
 
 // GetWebsiteProjectSourceDownloadURL calls GET /minimax-desktop/api/v1/drive/file/:node_id/website-project-source/download-url.
 // Inventory DesktopService.GetWebsiteProjectSourceDownloadURL. Transport metadataOnly.
 // Response field names follow the IDL jsonName. Scalar primitives without a TypeScript type stay raw JSON.
 // This path is rewritten by the app-server dispatcher to the website gateway before the IDL registrar. GatewayRaw keeps the original body.
-func (c *Client) GetWebsiteProjectSourceDownloadURL(ctx context.Context, req GetWebsiteProjectSourceDownloadURLReq) (GetWebsiteProjectSourceDownloadURLResp, error) {
-	return callUnary[GetWebsiteProjectSourceDownloadURLResp](c, ctx, specByName["GetWebsiteProjectSourceDownloadURL"], req)
+func (c *Client) GetWebsiteProjectSourceDownloadURL(ctx context.Context, req GetWebsiteProjectSourceDownloadURLReq) (DriveGatewayResp, error) {
+	if err := validateDriveGateway("GetWebsiteProjectSourceDownloadURL", req); err != nil {
+		return DriveGatewayResp{}, err
+	}
+	return callUnary[DriveGatewayResp](c, ctx, specByName["GetWebsiteProjectSourceDownloadURL"], req)
 }
 
 // GetLlmContextCapture calls GET /minimax-desktop/api/v1/debug/llm-context/capture.

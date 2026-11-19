@@ -385,9 +385,19 @@ def simplify_methods(methods, schemas_by_name, schemas_by_ident, arrays):
         request_schema = schemas_by_name.get(request_schema_name) or {}
         fields = schema_field_map(request_schema)
         bindings = []
+        type_only = []
         for binding in bindings_in:
             kind = binding.get("kind")
             if kind == "none":
+                type_only.append(
+                    {
+                        "field": binding.get("fieldName"),
+                        "tsType": binding.get("tsType") or "",
+                        "valueKind": binding.get("valueKind") or "",
+                        "nestedStruct": binding.get("tsType") if binding.get("valueKind") == "struct" else None,
+                        "children": binding_children(binding, arrays),
+                    }
+                )
                 continue
             field_name = binding.get("fieldName")
             schema_field = fields.get(field_name) or {}
@@ -437,6 +447,7 @@ def simplify_methods(methods, schemas_by_name, schemas_by_ident, arrays):
                 "gatewayOverride": path == "/minimax-desktop/api/v1/drive"
                 or path.startswith("/minimax-desktop/api/v1/drive/"),
                 "bindings": bindings,
+                "typeOnly": type_only,
             }
         )
         names.append(method["methodName"])
@@ -507,11 +518,68 @@ def go_type_name(schema_name: str, used: dict[str, str]) -> str:
     return name
 
 
-def field_go_type(field, type_names, optional: bool) -> str:
+EVIDENCE: dict[tuple[str, str], set[str]] = {}
+
+
+def add_evidence(schema: str | None, field: str | None, ts: str | None) -> None:
+    if schema and field and ts:
+        EVIDENCE.setdefault((schema, field), set()).add(ts)
+
+
+def collect_evidence(methods) -> None:
+    EVIDENCE.clear()
+    for method in methods:
+        groups = list(method["bindings"]) + list(method.get("typeOnly") or [])
+        for binding in groups:
+            add_evidence(method.get("requestType"), binding.get("field"), binding.get("tsType"))
+            parents = []
+            if binding.get("nestedStruct"):
+                parents.append(binding["nestedStruct"])
+            if binding.get("valueKind") == "struct" and binding.get("tsType"):
+                parents.append(binding["tsType"])
+            for parent in parents:
+                for child in binding.get("children") or []:
+                    add_evidence(parent, child.get("field"), child.get("tsType"))
+
+
+def go_from_ts(ts: str, optional: bool) -> str | None:
+    if ts == "string":
+        return "*string" if optional else "string"
+    if ts in ("number", "ThriftI64"):
+        return "*Number" if optional else "Number"
+    if ts == "boolean":
+        return "*bool" if optional else "bool"
+    if ts == "string[]":
+        return "[]string"
+    if ts in ("number[]", "ThriftI64[]"):
+        return "[]Number"
+    if ts == "boolean[]":
+        return "[]bool"
+    if ts == "string[][]":
+        return "[][]string"
+    if ts == "Record<string, string>":
+        return "map[string]string"
+    if ts == "Record<string, Record<string, string>>":
+        return "map[string]map[string]string"
+    # Erased TypeScript alias used as a scalar binding. The HTTP binder accepts
+    # a JSON string for these (valueKind scalar, not number or boolean).
+    if ts and ts[0].isupper() and not ts.endswith("[]") and "<" not in ts:
+        return "*string" if optional else "string"
+    return None
+
+
+def evidence_type(schema_name: str, field_name: str, optional: bool) -> str | None:
+    types = EVIDENCE.get((schema_name, field_name))
+    if not types or len(types) != 1:
+        return None
+    return go_from_ts(next(iter(types)), optional)
+
+
+def field_go_type(field, type_names, optional: bool, schema_name: str = "") -> str:
     value = field.get("value") or {}
     kind = value.get("kind")
     if kind == "scalar" or kind is None:
-        base = "Scalar"
+        base = evidence_type(schema_name, field.get("fieldName") or "", optional) or "Scalar"
     elif kind == "struct":
         ref = value.get("schema")
         nested = None
@@ -531,10 +599,17 @@ def field_go_type(field, type_names, optional: bool) -> str:
             go = type_names.get(nested, "")
             base = f"[]{go}" if go else "[]json.RawMessage"
         elif item.get("kind") == "scalar" or item.get("kind") is None:
-            base = "[]Scalar"
+            hinted = evidence_type(schema_name, field.get("fieldName") or "", False)
+            base = hinted if hinted and hinted.startswith("[]") else "[]Scalar"
         else:
             base = "[]json.RawMessage"
     elif kind == "map":
+        hinted = evidence_type(schema_name, field.get("fieldName") or "", False)
+        if hinted and hinted.startswith("map["):
+            base = hinted
+            if optional and kind in ("scalar", None) and base in ("Scalar",):
+                return "*Scalar"
+            return base
         inner = value.get("value") or {}
         if inner.get("kind") == "struct":
             ref = inner.get("schema")
@@ -557,17 +632,16 @@ def binding_go_type(binding, type_names) -> str:
     ts = binding.get("tsType") or ""
 
     def scalar_from_ts(ts_type: str) -> str:
-        if ts_type == "string":
-            return "*string" if optional else "string"
-        if ts_type in ("number", "ThriftI64"):
-            return "*Number" if optional else "Number"
-        if ts_type == "boolean":
-            return "*bool" if optional else "bool"
+        mapped = go_from_ts(ts_type, optional)
+        if mapped:
+            return mapped
         return "*Scalar" if optional else "Scalar"
 
     # Schema shape wins over valueKind "unsupported". The HTTP encoder
     # serializes body fields from the schema, and "unsupported" only means
     # the binding's scalar coercion does not apply.
+    if ts == "string[][]":
+        return "[][]string"
     if binding.get("itemStruct"):
         return f"[]{type_names[binding['itemStruct']]}"
     if binding.get("mapStruct"):
@@ -651,7 +725,7 @@ def render_struct(schema_name, go_name, schema, type_names, gateway: bool) -> st
         used_fields.add(go_field)
         json_name = field.get("jsonName") or field.get("wireName") or fname
         optional = field.get("requiredness") != "required"
-        go_t = field_go_type(field, type_names, optional)
+        go_t = field_go_type(field, type_names, optional, schema_name)
         # resolve struct names inside field_go_type via schema objects already named
         tag = json_name
         if optional:
@@ -824,11 +898,22 @@ def render_method(method, req_name, resp_name, frame_name) -> str:
             f"}}\n"
         )
     else:
-        body += (
-            f"func (c *Client) {method['methodName']}(ctx context.Context, req {req_name}) ({resp_name}, error) {{\n"
-            f"\treturn callUnary[{resp_name}](c, ctx, specByName[{go_string(method['methodName'])}], req)\n"
-            f"}}\n"
-        )
+        result = "DriveGatewayResp" if method.get("gatewayOverride") else resp_name
+        if method.get("gatewayOverride"):
+            body += (
+                f"func (c *Client) {method['methodName']}(ctx context.Context, req {req_name}) (DriveGatewayResp, error) {{\n"
+                f"\tif err := validateDriveGateway({go_string(method['methodName'])}, req); err != nil {{\n"
+                f"\t\treturn DriveGatewayResp{{}}, err\n"
+                f"\t}}\n"
+                f"\treturn callUnary[DriveGatewayResp](c, ctx, specByName[{go_string(method['methodName'])}], req)\n"
+                f"}}\n"
+            )
+        else:
+            body += (
+                f"func (c *Client) {method['methodName']}(ctx context.Context, req {req_name}) ({result}, error) {{\n"
+                f"\treturn callUnary[{result}](c, ctx, specByName[{go_string(method['methodName'])}], req)\n"
+                f"}}\n"
+            )
     return body
 
 
@@ -867,9 +952,9 @@ def render_inventory_md(methods) -> str:
         "",
         f"Denominator: **{len(methods)}** methods. `RawCall` is not one of them.",
         "",
-        "Scalar response primitives are unverified when the IDL schema records `kind: scalar` without a TypeScript type. Those fields use `Scalar` and keep the JSON literal.",
+        "Scalar means the IDL schema recorded `kind: scalar` and no single binding or structFields tsType was found for that struct field. A TypeScript alias that is still a scalar binding is generated as `string`, because the HTTP binder only accepts a JSON string, number, or boolean and the alias is not numeric or boolean.",
         "",
-        "Drive paths are intercepted by the app-server dispatcher and handled by the website gateway. The request path is unchanged. `GatewayRaw` retains the gateway body.",
+        "Drive paths are rewritten to the website gateway before the IDL response encoder. Those methods return `DriveGatewayResp` (`base_resp` plus the raw JSON body). The IDL response struct is not applied on that path.",
         "",
         "| Method | HTTP | Path | Transport | Category | Phase | Side effect |",
         "| --- | --- | --- | --- | --- | --- | --- |",
@@ -1044,6 +1129,7 @@ def main(argv: list[str]) -> None:
     merge_research(methods, research)
     needed = reachable_type_names(methods, schemas_by_name, schemas_by_ident)
     # request types that are also schemas stay in type_names but are rendered from bindings
+    collect_evidence(methods)
     type_names = assign_type_names(needed, schemas_by_name)
     for method in methods:
         if method["requestType"] and method["requestType"] not in type_names:

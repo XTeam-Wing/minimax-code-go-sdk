@@ -303,6 +303,48 @@ func TestAuthContextRejectsLoggedOutCredentials(t *testing.T) {
 	}
 }
 
+func TestErrorDataPreserved(t *testing.T) {
+	msg, err := parseInbound([]byte(`{"id":"c1","error":{"code":-32001,"message":"busy","data":{"retryable":true}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if msg.err == nil || !msg.err.Retryable() || !strings.Contains(string(msg.err.Data), "retryable") {
+		t.Fatalf("%+v", msg.err)
+	}
+}
+
+func TestNilServerRequestDenies(t *testing.T) {
+	clientRead, serverWrite := io.Pipe()
+	serverRead, clientWrite := io.Pipe()
+	srv := &fakeserver.Server{In: serverRead, Out: serverWrite}
+	go srv.Serve()
+	defer serverWrite.Close()
+	defer clientWrite.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	client, err := DialStdio(ctx, clientRead, clientWrite, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	if _, err := serverWrite.Write([]byte("{\"jsonrpc\":\"2.0\",\"id\":\"srv-1\",\"method\":\"permission/ask\",\"params\":{\"command\":\"rm -rf /\"}}\n")); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		for _, raw := range srv.Lines() {
+			if strings.Contains(raw, "srv-1") && strings.Contains(raw, "deny") && strings.Contains(raw, "error") {
+				if strings.Contains(raw, `"result"`) {
+					t.Fatalf("success result: %s", raw)
+				}
+				return
+			}
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("no denial reply: %v", srv.Lines())
+}
+
 func TestStdioHealthUnsupported(t *testing.T) {
 	client := pair(t, &fakeserver.Server{})
 	if _, err := client.Readyz(context.Background()); !errors.Is(err, ErrHealthUnsupported) {

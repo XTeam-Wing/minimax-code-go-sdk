@@ -35,6 +35,7 @@ type Server struct {
 	credits  map[string]int
 	waiters  map[string]chan struct{}
 	requests []recorded
+	lines    []string
 	ready    chan struct{}
 	once     sync.Once
 	sawInit  bool
@@ -53,6 +54,15 @@ func (s *Server) Requests() []recorded {
 	defer s.mu.Unlock()
 	out := make([]recorded, len(s.requests))
 	copy(out, s.requests)
+	return out
+}
+
+// Lines returns raw client messages, including replies to server requests.
+func (s *Server) Lines() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]string, len(s.lines))
+	copy(out, s.lines)
 	return out
 }
 
@@ -84,6 +94,9 @@ func (s *Server) Serve() {
 	for {
 		line, err := in.ReadBytes('\n')
 		if len(line) > 0 {
+			s.mu.Lock()
+			s.lines = append(s.lines, string(line))
+			s.mu.Unlock()
 			s.dispatch(line)
 		}
 		if err != nil {

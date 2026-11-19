@@ -73,7 +73,9 @@ agents, err := client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 The full method table is [docs/method-inventory.md](docs/method-inventory.md). The API guide is [docs/api.md](docs/api.md). A Chinese walkthrough is [docs/getting-started.zh-CN.md](docs/getting-started.zh-CN.md).
 
-Request structs are typed from the IDL bindings: 1,358 fields have a declared Go type and 33 are `Scalar`, across 452 request types. Response and nested structs carry the unknown primitives: 2,971 `Scalar` fields and 1,991 declared fields. `Scalar` keeps the JSON literal. Drive responses also keep `GatewayRaw` because the dispatcher rewrites those 13 paths to the website gateway.
+The 470 methods are the frozen IDL surface. The process also serves `/mavis/api/...` dispatcher leaves (permission, content, browser, communication, cron, matrix, usage, fs, file, git, runtime, diagnostics). Those are named methods on `mavis.Client`. `mavis.Raw` remains only for a path that is not in that list. Agent routes past `GET /agent/session/:id` and `POST /agent` are still delegated inside the CLI and are not a closed leaf list.
+
+Request bindings no longer use `Scalar`. The aliases that used to be opaque (`PermissionReply`, `LocalHookScope`, and the other erased names) are JSON strings: the binder's `valueKind` is scalar and the alias is not `number` or `boolean`. `Record<string, string>` fields are `map[string]string`. Nested and response structs still have **2,818** `Scalar` fields and **2,145** fields with a declared Go type. A field stays `Scalar` only when the schema says `kind: scalar` and no binding or `structFields` entry gives one `tsType` for that struct field. Drive methods return `DriveGatewayResp`: `base_resp.status_code` / `status_msg`, plus `Raw` for the rest of the gateway JSON. The IDL response encoder does not run on those 13 paths.
 
 `desktop.RawCall` is only the escape hatch for a method that is not in this baseline. It is not a substitute for the 470 named methods.
 
@@ -135,8 +137,8 @@ Host: Linux 6.12, glibc 2.39, Node v22.23.4, Go 1.22.2.
 | `go test ./...` | passed |
 | `go test -race ./...` | passed |
 | `GOOS=windows GOARCH=amd64` test compile and `GOOS=windows GOARCH=arm64` example build | passed |
-| Live stdio: `initialize`, `ListAgents` (5 agents), `CreateSession` + `AbortSession` on agent `mavis`, `GetEcho` → `get: go-sdk`, `Ping` → `pong: ping`, `GET /mavis/health` → `status=ok runtime=local-runtime`, open and abort `SubscribeGlobalEvents` | passed in 2.42s. Server version **0.7.8**, protocol **1**, auth mode **desktop**. Command: `node …/cli.js app-server --stdio --foreground --data-dir <temp> --workspace <temp> --auth-mode desktop` |
-| Live unix: `GET /readyz` and `GET /healthz` (`ok`, version 0.7.8, protocol 1, auth `desktop`) and `ListAgents` | passed in 2.06s. The socket directory must be mode `0700`. |
+| Live stdio | passed in 4.99s. Server **0.7.8**, protocol **1**, auth **desktop**. `ListAgents` returned 5. `CreateSession` + `AbortSession` succeeded for `mavis`. `GetEcho` = `get: go-sdk`. `Ping` = `pong: ping`. `GET /mavis/health` = `status=ok runtime=local-runtime`. `SubscribeGlobalEvents` delivered `kind=heartbeat` with no `type`, then closed. `GET /minimax-desktop/api/v1/does-not-exist` returned **404**. Command: `node …/cli.js app-server --stdio --foreground --data-dir <temp> --workspace <temp> --auth-mode desktop` |
+| Live unix | passed in 1.86s. `/readyz` and `/healthz` ok (version 0.7.8, protocol 1, auth `desktop`) and `ListAgents`. The socket directory must be mode `0700`. |
 
 No login, no message send, and no account mutation were performed.
 
