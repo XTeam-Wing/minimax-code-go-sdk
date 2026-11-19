@@ -224,7 +224,11 @@ func classifyCoverage(row CoverageOutcome) CoverageOutcome {
 	case "negative":
 		row.Class = "contract"
 	case "blocked":
-		row.Class = "remote"
+		if strings.HasPrefix(row.Detail, "root ") || strings.Contains(row.Detail, "reviewContent") {
+			row.Class = "blocked-root"
+		} else {
+			row.Class = "remote"
+		}
 	case "notrun":
 		if remotePrerequisite(row.ID, row.Detail) {
 			row.Class = "remote"

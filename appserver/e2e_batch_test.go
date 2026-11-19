@@ -173,7 +173,7 @@ func classifyServer(err error) (string, string) {
 	case strings.Contains(body, "CONTENT_POLICY_VIOLATION"):
 		return "negative", "HTTP " + strconv.Itoa(statusErr.Status) + " CONTENT_POLICY_VIOLATION " + clip(body, 160)
 	case statusErr.Status == 409:
-		return "negative", "HTTP 409"
+		return "negative", "HTTP 409 " + clip(body, 180)
 	case statusErr.Status == 500:
 		return "negative", "HTTP 500 on a request whose required fields were set"
 	default:

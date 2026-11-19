@@ -167,14 +167,11 @@ func assertSkillRoundTrip(t *testing.T, ctx context.Context, desk *desktop.Clien
 	})
 	if err != nil || created.Skill == nil {
 		recordCall(t, ledger, "idl.CreateSkill", err)
-		if err != nil {
-			outcome, _ := classifyServer(err)
-			if outcome == "negative" {
-				const why = "not called: CreateSkill was rejected by content policy for name helloskill. Get, enable, and delete need a skill this server accepts"
-				ledger.note("idl.GetSkill", "negative", why)
-				ledger.note("idl.SetSkillEnabled", "negative", why)
-				ledger.note("idl.DeleteSkill", "negative", why)
-			}
+		if contentSafety(err) {
+			const wire = `wire {"name":"helloskill","description":"hello","content":"hello","agent_name":...} matches createSkill fields reviewed by ovn`
+			const why = "official createSkill calls ovn(reviewContent, [name, description, content]). US blocks when pass is false and errorKind is not api_error. An uninitialized reviewer returns local_error, so any non-empty text is fail-closed HTTP 422. This is not a JSON shape error. " + wire
+			ledger.note("idl.CreateSkill", "blocked", why)
+			blockRoot(ledger, "idl.CreateSkill", []string{"idl.GetSkill", "idl.SetSkillEnabled", "idl.DeleteSkill"}, why)
 		}
 		return
 	}
@@ -488,6 +485,17 @@ func assertArtifactContext(t *testing.T, ctx context.Context, desk *desktop.Clie
 	}
 	ledger.note("idl.GetArtifactSpaceContext", "real", "summary hello summary")
 	ledger.note("idl.WriteArtifactSpaceContext", "real", "changed true and summary reread")
+}
+
+func contentSafety(err error) bool {
+	var statusErr *desktop.StatusError
+	return errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "CONTENT_POLICY_VIOLATION")
+}
+
+func blockRoot(ledger *coverageLedger, root string, ids []string, why string) {
+	for _, id := range ids {
+		ledger.note(id, "blocked", "root "+root+"; "+why)
+	}
 }
 
 func recordCall(t *testing.T, ledger *coverageLedger, id string, err error) {

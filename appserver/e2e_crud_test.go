@@ -33,6 +33,7 @@ func assertLocalCRUD(t *testing.T, ctx context.Context, client *Client, desk *de
 	assertPrepareRestart(t, ledger)
 	assertUnixHealth(t, ledger)
 	assertRoundTrips(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
+	assertTopo(t, ctx, client, desk, ledger, workspace, agent, sessionID)
 }
 
 func assertEcho(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
@@ -252,6 +253,14 @@ func assertMCPServer(t *testing.T, ctx context.Context, desk *desktop.Client, le
 		t.Fatalf("GetLocalMcpServer: %v", err)
 	}
 	assertSyntheticSecret(t, ctx, desk, ledger, name)
+	tested, err := desk.TestLocalMcpServer(ctx, desktop.TestLocalMCPServerReq{ServerName: name})
+	if err != nil || tested.Result == nil {
+		recordCall(t, ledger, "idl.TestLocalMcpServer", err)
+	} else if detail, ok := populatedDetail(reflect.ValueOf(tested.Result)); ok {
+		ledger.note("idl.TestLocalMcpServer", "real", detail)
+	} else {
+		ledger.note("idl.TestLocalMcpServer", "notrun", "test result had no populated field")
+	}
 	if _, err := desk.DeleteLocalMcpServer(ctx, desktop.DeleteLocalMCPServerReq{ServerName: name}); err != nil {
 		t.Fatalf("DeleteLocalMcpServer: %v", err)
 	}
@@ -408,7 +417,9 @@ func assertDisabledCron(t *testing.T, ctx context.Context, desk *desktop.Client,
 	if err != nil || created.Definition == nil {
 		var statusErr *desktop.StatusError
 		if errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "CONTENT_POLICY_VIOLATION") {
-			ledger.note("idl.CreateCronDefinition", "negative", "HTTP 422 CONTENT_POLICY_VIOLATION for name hello note and prompt hello. A cron success needs a name and prompt this server accepts, with enabled false so it does not start a model turn")
+			const why = "official aje reviews cron name as CronTitle and prompt as ConfigField. US blocks when pass is false and errorKind is not api_error. Uninitialized reviewContent returns local_error, so the HTTP 422 is fail-closed content safety, not a rejected JSON shape. Wire includes name and prompt. enabled was false and the definition was not triggered."
+			ledger.note("idl.CreateCronDefinition", "blocked", why)
+			blockRoot(ledger, "idl.CreateCronDefinition", []string{"idl.UpdateCronDefinition", "idl.GetCronDefinition", "idl.DeleteCronDefinition", "idl.ListCronRuns"}, why)
 			return
 		}
 		noteServer(t, ledger, "idl.CreateCronDefinition", err)
