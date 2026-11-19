@@ -1,6 +1,10 @@
 package desktop
 
-import "testing"
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+)
 
 func TestValidateCreateGoal(t *testing.T) {
 	objective := "reply pong"
@@ -44,5 +48,43 @@ func TestGoalStateReadsStrings(t *testing.T) {
 	}
 	if got, ok := goal.SessionText(); !ok || got != "s1" {
 		t.Fatal(got, ok)
+	}
+}
+
+func TestGoalRequestsDoNotInventEffort(t *testing.T) {
+	objective := "reply pong"
+	behavior := GoalSendQueue
+	budget := Number(1000)
+	body, err := json.Marshal(CreateGoalReq{
+		SessionID:    "s1",
+		Objective:    &objective,
+		TokenBudget:  &budget,
+		SendBehavior: &behavior,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+	if strings.Contains(text, "effort") || strings.Contains(text, "thinking") {
+		t.Fatal(text)
+	}
+	session := "s1"
+	effort := "caller-selected"
+	selected, err := json.Marshal(SelectModelReq{
+		ProviderID: "minimax_api",
+		ModelID:    "MiniMax-M3.1-Flash",
+		SessionID:  &session,
+		Thinking:   &ModelThinkingInput{Effort: &effort},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(selected, &got); err != nil {
+		t.Fatal(err)
+	}
+	thinking, _ := got["thinking"].(map[string]any)
+	if thinking["effort"] != effort || got["provider_id"] != "minimax_api" || got["model_id"] != "MiniMax-M3.1-Flash" || got["session_id"] != session {
+		t.Fatal(string(selected))
 	}
 }
