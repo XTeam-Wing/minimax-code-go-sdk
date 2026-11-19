@@ -166,7 +166,7 @@ func assertShellPreference(t *testing.T, ctx context.Context, desk *desktop.Clie
 	if original == desktop.AgentShellGitBash {
 		next = desktop.AgentShellAuto
 	}
-	put, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: next})
+	put, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: &next})
 	if err != nil {
 		if runtime.GOOS != "windows" && shellPlatformRejected(err) {
 			ledger.note("idl.GetAgentShellStatus", "real", "preference "+shellPreferenceName(original))
@@ -190,7 +190,7 @@ func assertShellPreference(t *testing.T, ctx context.Context, desk *desktop.Clie
 	if !ok || reread != next {
 		t.Fatalf("stored shell preference %v", again.Status.Preference)
 	}
-	if _, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: original}); err != nil {
+	if _, err := desk.PutAgentShellPreference(ctx, desktop.PutAgentShellPreferenceReq{Preference: &original}); err != nil {
 		t.Fatalf("restore shell: %v", err)
 	}
 	ledger.note("idl.GetAgentShellStatus", "real", "preference changed to "+shellPreferenceName(next))
