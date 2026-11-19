@@ -13,7 +13,9 @@ type CoverageOutcome struct {
 	ID      string `json:"id"`
 	Surface string `json:"surface,omitempty"`
 	Outcome string `json:"outcome"`
+	Class   string `json:"class,omitempty"`
 	Detail  string `json:"detail,omitempty"`
+	Repro   string `json:"repro,omitempty"`
 }
 
 type coverageLedger struct {

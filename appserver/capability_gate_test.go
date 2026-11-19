@@ -14,6 +14,29 @@ import (
 // method plus the outer RPC, mavis, and event rows known in this client.
 // It does not store the latest run's pass count. Run TestLiveLocalBatch to
 // write that report outside the repository.
+func TestCoverageClass(t *testing.T) {
+	exercised := classifyCoverage(CoverageOutcome{ID: "idl.GetEcho", Outcome: "real", Detail: "message contains crud-echo"})
+	if exercised.Class != "exercised" || exercised.Repro != exercised.Detail {
+		t.Fatalf("%+v", exercised)
+	}
+	contract := classifyCoverage(CoverageOutcome{ID: "idl.ListIdeApps", Outcome: "negative", Detail: "HTTP 501"})
+	if contract.Class != "contract" {
+		t.Fatal(contract.Class)
+	}
+	remote := classifyCoverage(CoverageOutcome{ID: "idl.SendMessage", Outcome: "notrun", Detail: "model turn requires the parent API key"})
+	if remote.Class != "remote" {
+		t.Fatal(remote.Class)
+	}
+	fixture := classifyCoverage(CoverageOutcome{ID: "idl.StopBackgroundTask", Outcome: "notrun", Detail: "needs TaskID as path task_id"})
+	if fixture.Class != "fixture" {
+		t.Fatal(fixture.Class)
+	}
+	secret := classifyCoverage(CoverageOutcome{ID: "idl.BindTelegram", Outcome: "notrun", Detail: "needs BotToken as implicitBody bot_token"})
+	if secret.Class != "remote" {
+		t.Fatal(secret.Class)
+	}
+}
+
 func TestCapabilityGate(t *testing.T) {
 	rows := coverageInventory()
 	seen := map[string]bool{}
@@ -152,6 +175,7 @@ func (l *coverageLedger) writeInventory() (string, error) {
 			row = CoverageOutcome{ID: policy.ID, Outcome: outcome, Detail: missingDetail(policy)}
 		}
 		row.Surface = policy.Surface
+		row = classifyCoverage(row)
 		rows = append(rows, row)
 		delete(noted, policy.ID)
 	}
@@ -163,6 +187,7 @@ func (l *coverageLedger) writeInventory() (string, error) {
 		if rest[i].Surface == "" {
 			rest[i].Surface = "extra"
 		}
+		rest[i] = classifyCoverage(rest[i])
 	}
 	sort.Slice(rest, func(i, j int) bool { return rest[i].ID < rest[j].ID })
 	extras += len(rest)
@@ -186,6 +211,63 @@ func (l *coverageLedger) writeInventory() (string, error) {
 func baselineSurface(surface string) bool {
 	switch surface {
 	case "idl", "request", "client-notification", "server-notification", "error", "unix":
+		return true
+	default:
+		return false
+	}
+}
+
+func classifyCoverage(row CoverageOutcome) CoverageOutcome {
+	switch row.Outcome {
+	case "real":
+		row.Class = "exercised"
+	case "negative":
+		row.Class = "contract"
+	case "blocked":
+		row.Class = "remote"
+	case "notrun":
+		if remotePrerequisite(row.ID, row.Detail) {
+			row.Class = "remote"
+		} else {
+			row.Class = "fixture"
+		}
+	}
+	if row.Repro == "" {
+		row.Repro = row.Detail
+	}
+	return row
+}
+
+func remotePrerequisite(id, detail string) bool {
+	name := strings.TrimPrefix(id, "idl.")
+	switch name {
+	case "SendMessage", "ResumeSession", "ContinueTurn", "SteerSession", "SendRemoteMessage",
+		"TriggerCron", "TriggerCronRun", "DeliverCron", "ReplyPermission", "BatchReplyPermissions",
+		"UpsertMiniMaxApiKey", "PushWorkspaceGit", "CommitAndPushWorkspaceGit",
+		"AccountLoginStart", "AccountLoginCancel", "AccountLogout":
+		return true
+	}
+	text := strings.ToLower(detail)
+	switch {
+	case strings.Contains(text, "oauth"):
+		return true
+	case strings.Contains(text, "credential"):
+		return true
+	case strings.Contains(text, "access token"):
+		return true
+	case strings.Contains(text, "permission.ask"):
+		return true
+	case strings.Contains(text, "auto-allow"):
+		return true
+	case strings.Contains(text, "publish"):
+		return true
+	case strings.Contains(text, "external message"):
+		return true
+	case strings.Contains(text, "parent api key"):
+		return true
+	case strings.Contains(text, "model turn"):
+		return true
+	case strings.Contains(text, "api_key"), strings.Contains(text, "bot_token"), strings.Contains(text, "client_secret"):
 		return true
 	default:
 		return false

@@ -17,7 +17,7 @@ import (
 
 // assertLocalCRUD creates temporary resources and checks the fields that
 // come back. A decoded 2xx without the written value is not recorded as real.
-func assertLocalCRUD(t *testing.T, ctx context.Context, client *Client, desk *desktop.Client, ledger *coverageLedger, workspace, agent, sessionID string) {
+func assertLocalCRUD(t *testing.T, ctx context.Context, client *Client, desk *desktop.Client, ledger *coverageLedger, workspace, agent, sessionID, projectKey string) {
 	t.Helper()
 	assertEcho(t, ctx, desk, ledger)
 	assertComposer(t, ctx, desk, ledger)
@@ -32,6 +32,7 @@ func assertLocalCRUD(t *testing.T, ctx context.Context, client *Client, desk *de
 	assertEventStream(t, ctx, desk, ledger)
 	assertPrepareRestart(t, ledger)
 	assertUnixHealth(t, ledger)
+	assertRoundTrips(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
 }
 
 func assertEcho(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {

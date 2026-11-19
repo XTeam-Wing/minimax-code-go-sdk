@@ -98,7 +98,7 @@ func TestLiveLocalBatch(t *testing.T) {
 	ledger.note("idl.CreateProject", "real", "project key returned")
 	sweepReads(t, ctx, desk, ledger, workspace, agent, sessionID, projectKey)
 	assertLocalWrites(t, ctx, desk, ledger, workspace, projectKey)
-	assertLocalCRUD(t, ctx, client, desk, ledger, workspace, agent, sessionID)
+	assertLocalCRUD(t, ctx, client, desk, ledger, workspace, agent, sessionID, projectKey)
 	assertMavisReads(t, ctx, desk, ledger, workspace)
 	noteUpstreamGaps(ledger)
 	ledger.note("request.initialize", "real", "Start completed the handshake")
@@ -170,6 +170,8 @@ func classifyServer(err error) (string, string) {
 		return "blocked", "HTTP 404 " + clip(body, 160)
 	case statusErr.Status == 401 || statusErr.Status == 403 || statusErr.Status == 503:
 		return "blocked", "HTTP " + strconv.Itoa(statusErr.Status) + " " + clip(body, 160)
+	case strings.Contains(body, "CONTENT_POLICY_VIOLATION"):
+		return "negative", "HTTP " + strconv.Itoa(statusErr.Status) + " CONTENT_POLICY_VIOLATION " + clip(body, 160)
 	case statusErr.Status == 409:
 		return "negative", "HTTP 409"
 	case statusErr.Status == 500:
