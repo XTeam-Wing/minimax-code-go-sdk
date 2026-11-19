@@ -52,3 +52,22 @@ func TestEncodeResumeDoesNotRestartATurn(t *testing.T) {
 		t.Fatalf("body %s", contBody)
 	}
 }
+
+func TestEncodeResumeQueueFlagsSelectDispatch(t *testing.T) {
+	drain := true
+	_, _, body, err := encodeRequest(specByName["ResumeSession"], ResumeSessionReq{ID: "mvs_example", DrainQueued: &drain})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), `"drain_queued":true`) || strings.Contains(string(body), "continue_paused_queue") {
+		t.Fatalf("body %s", body)
+	}
+	keep := true
+	_, _, body, err = encodeRequest(specByName["ResumeSession"], ResumeSessionReq{ID: "mvs_example", ContinuePausedQueue: &keep})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), `"continue_paused_queue":true`) || strings.Contains(string(body), "drain_queued") {
+		t.Fatalf("body %s", body)
+	}
+}

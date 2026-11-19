@@ -64,7 +64,9 @@ func (s *EventStream[T]) Recv(ctx context.Context) (T, error) {
 	}
 }
 
-// Close aborts the stream. A second call is a no-op.
+// Close stops this reader. It sends one desktop transport abort frame for
+// this response. That removes the stream subscriber. It does not call
+// AbortSession and it does not submit another turn. A second call is a no-op.
 func (s *EventStream[T]) Close() error {
 	if s == nil || s.closed {
 		return nil

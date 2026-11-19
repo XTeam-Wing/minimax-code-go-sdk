@@ -168,6 +168,8 @@ func (c *Client) finishStart(ctx context.Context) error {
 
 // Close releases the connection. It is safe to call more than once.
 // When Start created the process, Close stops it and does not restart it.
+// Close does not call AbortSession. Stopping an owned process ends a running
+// turn because the server exits.
 func (c *Client) Close() error {
 	c.closeOnce.Do(func() {
 		pending, calls := c.takeClosed()
