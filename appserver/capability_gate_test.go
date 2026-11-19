@@ -7,117 +7,102 @@ import (
 	"github.com/XTeam-Wing/minimax-code-go-sdk/desktop"
 )
 
-// coverageRow is one reachable capability. Class is the kind of evidence a
-// test is allowed to claim. fakecontract is the generated wrapper test and is
-// not a server pass. blocked is a required case this process must not pretend
-// to have run.
-type coverageRow struct {
-	ID     string
-	Class  string
-	Test   string
-	Reason string
-}
-
+// TestCapabilityGate checks that the denominator lists every generated IDL
+// method plus the outer RPC, mavis, and event rows known in this client.
+// It does not store the latest run's pass count. Run TestLiveLocalBatch to
+// write that report outside the repository.
 func TestCapabilityGate(t *testing.T) {
-	rows := coverageRows()
-	if len(rows) < 470 {
-		t.Fatalf("denominator %d", len(rows))
-	}
+	rows := coverageInventory()
 	seen := map[string]bool{}
-	var real, negative, fake, blocked int
+	var blocked int
 	for _, row := range rows {
 		if row.ID == "" || seen[row.ID] {
 			t.Fatalf("bad id %q", row.ID)
 		}
 		seen[row.ID] = true
-		switch row.Class {
-		case "real":
-			real++
-			if row.Test == "" {
-				t.Fatalf("%s real row has no test", row.ID)
-			}
-		case "negative":
-			negative++
-			if row.Test == "" {
-				t.Fatalf("%s negative row has no test", row.ID)
-			}
-		case "fakecontract":
-			fake++
-		case "blocked":
+		if row.Policy == "blocked" {
 			blocked++
 			if row.Reason == "" {
-				t.Fatalf("%s blocked row has no reason", row.ID)
+				t.Fatalf("%s blocked without a reason", row.ID)
 			}
-		default:
-			t.Fatalf("%s class %s", row.ID, row.Class)
 		}
 	}
-	t.Logf("capabilities=%d real=%d negative=%d fakecontract=%d blocked=%d", len(rows), real, negative, fake, blocked)
-	if os.Getenv("MCODE_REQUIRE_COMPLETE") == "1" && (fake > 0 || blocked > 0) {
-		t.Fatalf("not complete: real=%d negative=%d fakecontract=%d blocked=%d", real, negative, fake, blocked)
+	for _, method := range desktop.MethodCatalog() {
+		if !seen["idl."+method.Name] {
+			t.Fatalf("inventory missing %s", method.Name)
+		}
+	}
+	if len(rows) < len(desktop.MethodCatalog()) {
+		t.Fatalf("inventory %d catalog %d", len(rows), len(desktop.MethodCatalog()))
+	}
+	t.Logf("inventory=%d catalog=%d blocked_policy=%d partial=true", len(rows), len(desktop.MethodCatalog()), blocked)
+	if os.Getenv("MCODE_REQUIRE_COMPLETE") == "1" {
+		t.Fatal("inventory is partial: model turns, permission replies, account oauth, drive publishing, and channel send are still blocked")
 	}
 }
 
-func coverageRows() []coverageRow {
-	overrides := coverageOverrides()
-	var rows []coverageRow
+type coveragePolicy struct {
+	ID     string
+	Policy string
+	Reason string
+}
+
+func coverageInventory() []coveragePolicy {
+	blocked := blockedPolicy()
+	var rows []coveragePolicy
 	for _, method := range desktop.MethodCatalog() {
-		row, ok := overrides[method.Name]
-		if !ok {
-			row = coverageRow{Class: "fakecontract", Test: "TestEveryWrapperMatchesInventory"}
+		row := coveragePolicy{ID: "idl." + method.Name, Policy: "server"}
+		if reason, ok := blocked[method.Name]; ok {
+			row.Policy = "blocked"
+			row.Reason = reason
+		} else if method.GatewayOverride {
+			row.Policy = "blocked"
+			row.Reason = "drive gateway can publish or mutate a remote site"
+		} else if method.SideEffect == "auth_credential" {
+			row.Policy = "blocked"
+			row.Reason = "credential write or secret read"
+		} else if method.SideEffect == "approval" {
+			row.Policy = "blocked"
+			row.Reason = "permission reply is not auto-approved"
 		}
-		row.ID = "idl." + method.Name
-		rows = append(rows, row)
-		delete(overrides, method.Name)
-	}
-	for name, row := range overrides {
-		if row.ID == "" {
-			row.ID = "extra." + name
-		}
 		rows = append(rows, row)
 	}
-	rows = append(rows, outerCoverageRows()...)
+	rows = append(rows, []coveragePolicy{
+		{ID: "rpc.initialize", Policy: "server"},
+		{ID: "rpc.initialized", Policy: "server"},
+		{ID: "rpc.account.read", Policy: "server"},
+		{ID: "rpc.account.login.start", Policy: "blocked", Reason: "interactive OAuth against a dedicated account"},
+		{ID: "rpc.account.login.cancel", Policy: "blocked", Reason: "cancels an OAuth login that this process does not start"},
+		{ID: "rpc.account.logout", Policy: "blocked", Reason: "logs out the account in the data directory"},
+		{ID: "rpc.runtime.authContext", Policy: "blocked", Reason: "would inject an access token"},
+		{ID: "rpc.server.prepareRestart", Policy: "server"},
+		{ID: "notify.initialized", Policy: "server"},
+		{ID: "notify.runtime.authContext", Policy: "blocked", Reason: "would inject an access token"},
+		{ID: "notify.account.login.completed", Policy: "blocked", Reason: "server-originated; not synthesized"},
+		{ID: "notify.account.updated", Policy: "blocked", Reason: "server-originated account change"},
+		{ID: "mavis.health", Policy: "server"},
+		{ID: "mavis.version", Policy: "server"},
+		{ID: "mavis.runtime.status", Policy: "server"},
+		{ID: "mavis.runtime.capabilities", Policy: "server"},
+		{ID: "mavis.config.get", Policy: "server"},
+		{ID: "mavis.fs.git-info", Policy: "server"},
+		{ID: "mavis.fs.dirs", Policy: "server"},
+		{ID: "mavis.update", Policy: "blocked", Reason: "update stub is not an updater, and this batch does not call it"},
+		{ID: "mavis.communication.send", Policy: "blocked", Reason: "would send an external message"},
+		{ID: "event.permission.ask", Policy: "blocked", Reason: "needs a real tool ask; replies are not automatic"},
+		{ID: "event.subagent.execution", Policy: "blocked", Reason: "parent model scenario must observe status started and read the child session"},
+		{ID: "event.thread_goal", Policy: "blocked", Reason: "published when a goal turn runs; parent model scenario"},
+		{ID: "negative.unknown-desktop-path", Policy: "server"},
+	}...)
 	return rows
 }
 
-func coverageOverrides() map[string]coverageRow {
-	real := func(test string) coverageRow {
-		return coverageRow{Class: "real", Test: test}
-	}
-	return map[string]coverageRow{
-		"ListAgents":            real("TestLiveSurface"),
-		"CreateSession":         real("TestLiveSurface"),
-		"GetSession":            real("TestLiveSurface"),
-		"UpdateSession":         {Class: "negative", Test: "TestLiveSurface", Reason: "0.7.8 returns HTTP 422 CONTENT_POLICY_VIOLATION for a title change; that is not a successful rename"},
-		"ListSessions":          real("TestLiveSurface"),
-		"AbortSession":          real("TestLiveSurface"),
-		"GetEcho":               real("TestLiveSurface"),
-		"Ping":                  real("TestLiveSurface"),
-		"SubscribeGlobalEvents": real("TestLiveSurface"),
-		"ListWorkspaceFileTree": real("TestLiveSurface"),
-		"CreateGoal":            real("TestLiveSurface"),
-		"GetGoal":               real("TestLiveSurface"),
-		"DeleteGoal":            real("TestLiveSurface"),
-		"SendMessage":           {Class: "blocked", Test: "TestLiveModelTurn", Reason: "model turn requires the parent API key; MCODE_E2E_LLM=1 and MCODE_LLM_DATA_DIR; AuthMode must be empty"},
-		"ReplyPermission":       {Class: "blocked", Reason: "needs a real permission.ask from a scoped test tool; the SDK must not auto-allow"},
-		"BatchReplyPermissions": {Class: "blocked", Reason: "needs a real permission.ask batch; the SDK must not auto-allow"},
-		"AccountLoginStart":     {ID: "extra.AccountLoginStart", Class: "blocked", Reason: "interactive OAuth against a dedicated account; not started by the SDK"},
-		"UpsertMiniMaxApiKey":   {Class: "blocked", Reason: "would write a credential into the data directory"},
-		"PrepareRestart":        {Class: "blocked", Reason: "restarts the server process; not part of the isolated read and session lifecycle"},
-	}
-}
-
-func outerCoverageRows() []coverageRow {
-	return []coverageRow{
-		{ID: "rpc.initialize", Class: "real", Test: "TestLiveSurface"},
-		{ID: "rpc.initialized", Class: "real", Test: "TestLiveSurface"},
-		{ID: "rpc.account.read", Class: "negative", Test: "TestLiveSurface", Reason: "0.7.8 app-server answers -32601 unknown method; that is not an account read"},
-		{ID: "rpc.account.login.start", Class: "blocked", Reason: "interactive OAuth against a dedicated account"},
-		{ID: "rpc.account.logout", Class: "blocked", Reason: "logs out the account in the data directory"},
-		{ID: "mavis.health", Class: "real", Test: "TestLiveSurface"},
-		{ID: "negative.unknown-desktop-path", Class: "negative", Test: "TestLiveSurface"},
-		{ID: "event.subagent.execution", Class: "blocked", Test: "TestLiveGoalAndSubagent", Reason: "a subagent counts only after subagent.execution status started and GetSession on the child; a prompt that mentions a subagent is not evidence"},
-		{ID: "drive.gateway", Class: "blocked", Reason: "website gateway calls can publish or mutate remote sites; need a disposable drive sandbox"},
-		{ID: "channel.send", Class: "blocked", Reason: "would send an external message"},
+func blockedPolicy() map[string]string {
+	return map[string]string{
+		"SendMessage":           "model turn requires the parent API key and MCODE_E2E_LLM=1",
+		"ReplyPermission":       "needs a real permission.ask; the SDK must not auto-allow",
+		"BatchReplyPermissions": "needs a real permission.ask batch; the SDK must not auto-allow",
+		"UpsertMiniMaxApiKey":   "would store a provider credential",
+		"PrepareRestart":        "restarts the owned server; covered only by a dedicated lifecycle test when enabled",
 	}
 }

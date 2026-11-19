@@ -143,7 +143,7 @@ No-auth protocol tests, with `--auth-mode desktop` and a temporary data director
 
 ```bash
 MCODE_E2E=1 MCODE_BIN=node MCODE_LEADING=/path/to/cli.js \
-  go test -count=1 -run 'TestLiveAppServer|TestLiveUnixHealth|TestLiveSurface' ./appserver
+  go test -count=1 -run 'TestLiveAppServer|TestLiveUnixHealth|TestLiveSurface|TestLiveLocalBatch' ./appserver
 ```
 
 Model scenarios, only after the API key is stored in an isolated data directory. Leave `AuthMode` empty. `CreateGoal` starts a model turn. A subagent is not counted unless `subagent.execution` reports `started` and `GetSession` reads the child.

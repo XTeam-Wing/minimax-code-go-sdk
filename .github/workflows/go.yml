@@ -91,4 +91,4 @@ jobs:
           mkdir -p "$RUNNER_TEMP/mcode"
           npm install --prefix "$RUNNER_TEMP/mcode" /tmp/minimax-ai-code-0.7.8.tgz
           MCODE_LEADING="$RUNNER_TEMP/mcode/node_modules/@minimax-ai/code/cli.js" \
-            go test -count=1 -timeout 10m -run 'TestLiveAppServer|TestLiveUnixHealth|TestLiveSurface' ./appserver
+            go test -count=1 -timeout 10m -run 'TestLiveAppServer|TestLiveUnixHealth|TestLiveSurface|TestLiveLocalBatch' ./appserver
