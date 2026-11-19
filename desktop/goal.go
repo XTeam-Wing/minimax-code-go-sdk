@@ -22,9 +22,14 @@ const (
 // compares tokensUsed with that budget after each accounted request, and
 // tokensUsed includes input, cache writes, cache reads, and output. Crossing
 // the budget sets budget_limited and stops auto-continuation. update_goal
-// complete is a model proposal the host settles later; PatchGoal status
-// complete is a separate call. A prompt that mentions a goal is not evidence
-// that a goal exists.
+// complete is a model proposal. The tool result settlement is
+// pending_host_validation and the goal snapshot is before_host_settlement.
+// The host then dispatches a separate foreground agent named verifier on
+// the same provider/model key. GetGoal status_reason paused(verifier_runtime)
+// is only the mapped issue spawn_failed or child_crash, and last_verification
+// stays unset until a verdict is stored. PatchGoal status complete is a
+// separate call. A prompt that mentions a goal is not evidence that a goal
+// exists.
 const (
 	GoalSendQueue = "queue"
 	GoalSendSteer = "steer"
