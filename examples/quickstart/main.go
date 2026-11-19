@@ -3,6 +3,9 @@
 //	MCODE_BIN=mcode go run ./examples/quickstart
 //
 // When the executable is node, set MCODE_LEADING to the cli.js path.
+// MCODE_AUTH_MODE is optional. Leave it unset for a headless API-key data
+// directory. "desktop" asks for a Desktop lease and blocks SendMessage with
+// 503 local_runtime_auth_pending when that lease is absent.
 package main
 
 import (
@@ -23,7 +26,7 @@ func main() {
 		Command:   env("MCODE_BIN", "mcode"),
 		DataDir:   os.Getenv("MCODE_DATA_DIR"),
 		Workspace: os.Getenv("MCODE_WORKSPACE"),
-		AuthMode:  env("MCODE_AUTH_MODE", "desktop"),
+		AuthMode:  os.Getenv("MCODE_AUTH_MODE"),
 	}
 	if leading := os.Getenv("MCODE_LEADING"); leading != "" {
 		opt.LeadingArgs = strings.Fields(leading)

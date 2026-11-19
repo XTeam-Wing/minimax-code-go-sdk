@@ -36,16 +36,16 @@ type DesktopBackgroundTaskError struct {
 // BaseReq is the 0.7.8 IDL struct BaseReq.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type BaseReq struct {
-	AppIDDeprecated       *string                      `json:"AppID_deprecated,omitempty"`
+	AppIDDeprecated       *Scalar                      `json:"AppID_deprecated,omitempty"`
 	AbConf                map[string]map[string]string `json:"ab_conf,omitempty"`
-	OSDeprecated          *string                      `json:"os_deprecated,omitempty"`
+	OSDeprecated          *Scalar                      `json:"os_deprecated,omitempty"`
 	SysLanguageDeprecated *string                      `json:"sys_language_deprecated,omitempty"`
 	IPRegionDeprecated    *string                      `json:"ip_region_deprecated,omitempty"`
 	ChannelDeprecated     *string                      `json:"channel_deprecated,omitempty"`
 	AbConfV2              map[string]string            `json:"ab_conf_v2,omitempty"`
 	IPLocation            *IPLocation                  `json:"ip_location,omitempty"`
 	IPLocationV2          *IPLocationV2                `json:"ip_location_v2,omitempty"`
-	AuthState             *string                      `json:"auth_state,omitempty"`
+	AuthState             *Scalar                      `json:"auth_state,omitempty"`
 	CommonParam           *CommonParam                 `json:"common_param,omitempty"`
 	BusData               *BusData                     `json:"bus_data,omitempty"`
 	Extra                 *ExtraInfo                   `json:"Extra,omitempty"`
@@ -925,7 +925,7 @@ type SandboxConfig struct {
 	Enabled     bool                     `json:"enabled"`
 	Filesystem  *SandboxFilesystemConfig `json:"filesystem"`
 	Network     *SandboxNetworkConfig    `json:"network"`
-	LocalAccess string                   `json:"local_access"`
+	LocalAccess SandboxLocalAccess       `json:"local_access"`
 }
 
 // SandboxFilesystemConfig is the 0.7.8 IDL struct SandboxFilesystemConfig.
@@ -1861,7 +1861,7 @@ type LocalMCPServerDetail struct {
 // LocalMCPServerConfig is the 0.7.8 IDL struct LocalMcpServerConfig.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type LocalMCPServerConfig struct {
-	Transport   string               `json:"transport"`
+	Transport   LocalMcpTransport    `json:"transport"`
 	Command     *string              `json:"command,omitempty"`
 	Args        []string             `json:"args,omitempty"`
 	Env         []LocalMCPKeyValue   `json:"env,omitempty"`
@@ -3437,17 +3437,17 @@ type CronDefinition struct {
 // CronSchedule is the 0.7.8 IDL struct CronSchedule.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CronSchedule struct {
-	Expression *string `json:"expression,omitempty"`
-	Timezone   *string `json:"timezone,omitempty"`
-	Kind       string  `json:"kind"`
-	RunAtMs    *Number `json:"run_at_ms,omitempty"`
+	Expression *string           `json:"expression,omitempty"`
+	Timezone   *string           `json:"timezone,omitempty"`
+	Kind       *CronScheduleKind `json:"kind"`
+	RunAtMs    *Number           `json:"run_at_ms,omitempty"`
 }
 
 // CronSessionTarget is the 0.7.8 IDL struct CronSessionTarget.
 // Scalar fields preserve JSON literals whose primitive type is not declared in the IDL.
 type CronSessionTarget struct {
-	Mode      string  `json:"mode"`
-	SessionID *string `json:"session_id,omitempty"`
+	Mode      *CronSessionTargetMode `json:"mode"`
+	SessionID *string                `json:"session_id,omitempty"`
 }
 
 // GetCronDefinitionResp is the 0.7.8 IDL struct GetCronDefinitionResp.
@@ -7860,8 +7860,8 @@ type GetAgentShellStatusReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type PutAgentShellPreferenceReq struct {
-	Preference string   `json:"preference"`
-	BaseReq    *BaseReq `json:"base_req,omitempty"`
+	Preference AgentShellPreference `json:"preference"`
+	BaseReq    *BaseReq             `json:"base_req,omitempty"`
 }
 
 // GetSandboxStatusReq is the request for GetSandboxStatus.
@@ -7929,25 +7929,25 @@ type EnhanceCanvasImageReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListMarketplacePluginsReq struct {
-	Cursor          *string `json:"cursor,omitempty"`
-	Limit           *Number `json:"limit,omitempty"`
-	Keyword         *string `json:"keyword,omitempty"`
-	Category        *string `json:"category,omitempty"`
-	SkillCursor     *string `json:"skill_cursor,omitempty"`
-	SkillLimit      *Number `json:"skill_limit,omitempty"`
-	Source          *string `json:"source,omitempty"`
-	SkillSourceType *string `json:"skill_source_type,omitempty"`
-	SkillSortType   *string `json:"skill_sort_type,omitempty"`
-	Marketplace     *string `json:"marketplace,omitempty"`
+	Cursor          *string                `json:"cursor,omitempty"`
+	Limit           *Number                `json:"limit,omitempty"`
+	Keyword         *string                `json:"keyword,omitempty"`
+	Category        *MarketplaceCategory   `json:"category,omitempty"`
+	SkillCursor     *string                `json:"skill_cursor,omitempty"`
+	SkillLimit      *Number                `json:"skill_limit,omitempty"`
+	Source          *InstalledPluginSource `json:"source,omitempty"`
+	SkillSourceType *SkillSourceType       `json:"skill_source_type,omitempty"`
+	SkillSortType   *SkillSortType         `json:"skill_sort_type,omitempty"`
+	Marketplace     *string                `json:"marketplace,omitempty"`
 }
 
 // GetMarketplacePluginReq is the request for GetMarketplacePlugin.
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type GetMarketplacePluginReq struct {
-	PluginName  string  `json:"plugin_name"`
-	Source      *string `json:"source,omitempty"`
-	Marketplace *string `json:"marketplace,omitempty"`
+	PluginName  string                 `json:"plugin_name"`
+	Source      *InstalledPluginSource `json:"source,omitempty"`
+	Marketplace *string                `json:"marketplace,omitempty"`
 }
 
 // ListInstalledPluginsReq is the request for ListInstalledPlugins.
@@ -7969,9 +7969,9 @@ type ListEnabledPluginsReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type MutatePluginReq struct {
-	PluginName  string  `json:"plugin_name"`
-	Source      *string `json:"source,omitempty"`
-	Marketplace *string `json:"marketplace,omitempty"`
+	PluginName  string                 `json:"plugin_name"`
+	Source      *InstalledPluginSource `json:"source,omitempty"`
+	Marketplace *string                `json:"marketplace,omitempty"`
 }
 
 // RefreshPluginsReq is the request for RefreshPlugins.
@@ -8113,7 +8113,7 @@ type CloseExtensionPaneReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type PackShareWorkReq struct {
-	Kind             string  `json:"kind"`
+	Kind             Scalar  `json:"kind"`
 	PluginName       *string `json:"plugin_name,omitempty"`
 	SkillLocationURI *string `json:"skill_location_uri,omitempty"`
 }
@@ -8266,15 +8266,15 @@ type ClearLocalMCPAuthReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListLocalHooksReq struct {
-	Scope      string  `json:"scope"`
-	ProjectDir *string `json:"project_dir,omitempty"`
+	Scope      LocalHookScope `json:"scope"`
+	ProjectDir *string        `json:"project_dir,omitempty"`
 }
 
 // CreateLocalHookReq is the request for CreateLocalHook.
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type CreateLocalHookReq struct {
-	Scope            string               `json:"scope"`
+	Scope            LocalHookScope       `json:"scope"`
 	ProjectDir       *string              `json:"project_dir,omitempty"`
 	ExpectedRevision string               `json:"expected_revision"`
 	Definition       *LocalHookDefinition `json:"definition"`
@@ -8285,7 +8285,7 @@ type CreateLocalHookReq struct {
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type UpdateLocalHookReq struct {
 	HookID           string               `json:"hook_id"`
-	Scope            string               `json:"scope"`
+	Scope            LocalHookScope       `json:"scope"`
 	ProjectDir       *string              `json:"project_dir,omitempty"`
 	ExpectedRevision string               `json:"expected_revision"`
 	Definition       *LocalHookDefinition `json:"definition"`
@@ -8295,31 +8295,31 @@ type UpdateLocalHookReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type DeleteLocalHookReq struct {
-	HookID           string  `json:"hook_id"`
-	Scope            string  `json:"scope"`
-	ProjectDir       *string `json:"project_dir,omitempty"`
-	ExpectedRevision string  `json:"expected_revision"`
+	HookID           string         `json:"hook_id"`
+	Scope            LocalHookScope `json:"scope"`
+	ProjectDir       *string        `json:"project_dir,omitempty"`
+	ExpectedRevision string         `json:"expected_revision"`
 }
 
 // SetLocalHookEnabledReq is the request for SetLocalHookEnabled.
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type SetLocalHookEnabledReq struct {
-	HookID           string  `json:"hook_id"`
-	Scope            string  `json:"scope"`
-	ProjectDir       *string `json:"project_dir,omitempty"`
-	Enabled          bool    `json:"enabled"`
-	ExpectedRevision *string `json:"expected_revision,omitempty"`
+	HookID           string         `json:"hook_id"`
+	Scope            LocalHookScope `json:"scope"`
+	ProjectDir       *string        `json:"project_dir,omitempty"`
+	Enabled          bool           `json:"enabled"`
+	ExpectedRevision *string        `json:"expected_revision,omitempty"`
 }
 
 // SetLocalHookScopeEnabledReq is the request for SetLocalHookScopeEnabled.
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type SetLocalHookScopeEnabledReq struct {
-	Scope            string  `json:"scope"`
-	ProjectDir       *string `json:"project_dir,omitempty"`
-	Enabled          bool    `json:"enabled"`
-	ExpectedRevision *string `json:"expected_revision,omitempty"`
+	Scope            LocalHookScope `json:"scope"`
+	ProjectDir       *string        `json:"project_dir,omitempty"`
+	Enabled          bool           `json:"enabled"`
+	ExpectedRevision *string        `json:"expected_revision,omitempty"`
 }
 
 // ListLocalMCPRuntimeServersReq is the request for ListLocalMcpRuntimeServers.
@@ -9010,7 +9010,7 @@ type CreateCronReq struct {
 	Enabled      *bool                `json:"enabled,omitempty"`
 	ProjectID    *Number              `json:"project_id,omitempty"`
 	Model        *ModelSelectionInput `json:"model,omitempty"`
-	ScheduleKind *string              `json:"schedule_kind,omitempty"`
+	ScheduleKind *Scalar              `json:"schedule_kind,omitempty"`
 	RunAt        *Number              `json:"run_at,omitempty"`
 	RunCount     *Number              `json:"run_count,omitempty"`
 }
@@ -9036,7 +9036,7 @@ type UpdateCronReq struct {
 	Session      *CronSessionConfig   `json:"session,omitempty"`
 	ProjectID    *Number              `json:"project_id,omitempty"`
 	Model        *ModelSelectionInput `json:"model,omitempty"`
-	ScheduleKind *string              `json:"schedule_kind,omitempty"`
+	ScheduleKind *Scalar              `json:"schedule_kind,omitempty"`
 	RunAt        *Number              `json:"run_at,omitempty"`
 	RunCount     *Number              `json:"run_count,omitempty"`
 }
@@ -9444,38 +9444,38 @@ type SkillEvolveLifecycleReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListSkillsReq struct {
-	AgentName           *string        `json:"agent_name,omitempty"`
-	Scope               *string        `json:"scope,omitempty"`
-	Page                *ListPageParam `json:"page,omitempty"`
-	Keyword             *string        `json:"keyword,omitempty"`
-	SourceType          *string        `json:"source_type,omitempty"`
-	ExcludeBuiltin      *bool          `json:"exclude_builtin,omitempty"`
-	IncludePluginSkills *bool          `json:"include_plugin_skills,omitempty"`
+	AgentName           *string          `json:"agent_name,omitempty"`
+	Scope               *SkillScope      `json:"scope,omitempty"`
+	Page                *ListPageParam   `json:"page,omitempty"`
+	Keyword             *string          `json:"keyword,omitempty"`
+	SourceType          *SkillSourceType `json:"source_type,omitempty"`
+	ExcludeBuiltin      *bool            `json:"exclude_builtin,omitempty"`
+	IncludePluginSkills *bool            `json:"include_plugin_skills,omitempty"`
 }
 
 // ListSkillHubReq is the request for ListSkillHub.
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ListSkillHubReq struct {
-	Page       *ListPageParam `json:"page,omitempty"`
-	SourceType *string        `json:"source_type,omitempty"`
-	Keyword    *string        `json:"keyword,omitempty"`
-	SortType   *string        `json:"sort_type,omitempty"`
-	Category   *string        `json:"category,omitempty"`
+	Page       *ListPageParam       `json:"page,omitempty"`
+	SourceType *SkillSourceType     `json:"source_type,omitempty"`
+	Keyword    *string              `json:"keyword,omitempty"`
+	SortType   *SkillSortType       `json:"sort_type,omitempty"`
+	Category   *MarketplaceCategory `json:"category,omitempty"`
 }
 
 // InstallSkillReq is the request for InstallSkill.
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type InstallSkillReq struct {
-	URL                 string       `json:"url"`
-	AgentName           *string      `json:"agent_name,omitempty"`
-	IsFromGit           *bool        `json:"is_from_git,omitempty"`
-	DisplayName         *string      `json:"display_name,omitempty"`
-	CreatorInfo         *CreatorInfo `json:"creator_info,omitempty"`
-	PublisherSourceType *string      `json:"publisher_source_type,omitempty"`
-	ObjectKey           *string      `json:"object_key,omitempty"`
-	BaseReq             *BaseReq     `json:"base_req,omitempty"`
+	URL                 string           `json:"url"`
+	AgentName           *string          `json:"agent_name,omitempty"`
+	IsFromGit           *bool            `json:"is_from_git,omitempty"`
+	DisplayName         *string          `json:"display_name,omitempty"`
+	CreatorInfo         *CreatorInfo     `json:"creator_info,omitempty"`
+	PublisherSourceType *SkillSourceType `json:"publisher_source_type,omitempty"`
+	ObjectKey           *string          `json:"object_key,omitempty"`
+	BaseReq             *BaseReq         `json:"base_req,omitempty"`
 }
 
 // PreviewSkillReq is the request for PreviewSkill.
@@ -9731,7 +9731,7 @@ type CreateSessionReq struct {
 	RunLocation             *RunLocationInput    `json:"run_location,omitempty"`
 	AppMode                 *string              `json:"app_mode,omitempty"`
 	ProjectID               *Number              `json:"project_id,omitempty"`
-	SessionKind             *string              `json:"session_kind,omitempty"`
+	SessionKind             *Scalar              `json:"session_kind,omitempty"`
 	ExpectedAgentInstanceID *string              `json:"expected_agent_instance_id,omitempty"`
 	BaseReq                 *BaseReq             `json:"base_req,omitempty"`
 }
@@ -10706,10 +10706,10 @@ type CompleteMemoryV2OnboardingReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type ReplyPermissionReq struct {
-	Name      string  `json:"name"`
-	RequestID string  `json:"request_id"`
-	Reply     string  `json:"reply"`
-	Message   *string `json:"message,omitempty"`
+	Name      string           `json:"name"`
+	RequestID string           `json:"request_id"`
+	Reply     *PermissionReply `json:"reply"`
+	Message   *string          `json:"message,omitempty"`
 }
 
 // ReplyQuestionReq is the request for ReplyQuestion.
@@ -10759,8 +10759,8 @@ type DismissPermissionReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type BatchReplyPermissionsReq struct {
-	RequestIds []string `json:"request_ids"`
-	Decision   string   `json:"decision"`
+	RequestIds []string                 `json:"request_ids"`
+	Decision   *BatchPermissionDecision `json:"decision"`
 }
 
 // ListFileTreeReq is the request for ListWorkspaceFileTree.

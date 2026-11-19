@@ -6,8 +6,10 @@ execute the package. Re-run when the pinned tarball changes:
 
     python3 tools/gen_desktop.py /path/to/minimax-ai-code-0.7.8.tgz
 
-Research JSON (optional) only supplies the planning category, phase, and
-inferred side-effect label. Protocol fields come from the tarball.
+internal/inventory/categories.json supplies the planning category, phase, and
+inferred side-effect label. Pass another JSON file as the second argument to
+override it. Protocol fields come from the tarball. An IDL alias is not
+treated as a string unless a 0.7.8 handler proves that wire type.
 """
 
 from __future__ import annotations
@@ -64,6 +66,19 @@ RESERVED_TYPES = {
     "MethodSpec",
     "Binding",
     "CallOption",
+    "AgentShellPreference",
+    "PermissionReply",
+    "BatchPermissionDecision",
+    "LocalHookScope",
+    "InstalledPluginSource",
+    "MarketplaceCategory",
+    "SkillScope",
+    "SkillSourceType",
+    "SkillSortType",
+    "CronScheduleKind",
+    "CronSessionTargetMode",
+    "LocalMcpTransport",
+    "SandboxLocalAccess",
 }
 
 RESERVED_METHODS = {
@@ -542,6 +557,43 @@ def collect_evidence(methods) -> None:
                     add_evidence(parent, child.get("field"), child.get("tsType"))
 
 
+# Go types in desktop/aliases.go. Each entry was checked against a 0.7.8
+# handler, not inferred from the alias spelling.
+PROVEN_STRING_ALIAS = {
+    "AgentShellPreference": "AgentShellPreference",
+}
+PROVEN_INT_ALIAS = {
+    "PermissionReply": "PermissionReply",
+    "BatchPermissionDecision": "BatchPermissionDecision",
+    "LocalHookScope": "LocalHookScope",
+    "InstalledPluginSource": "InstalledPluginSource",
+    "MarketplaceCategory": "MarketplaceCategory",
+    "SkillScope": "SkillScope",
+    "SkillSourceType": "SkillSourceType",
+    "SkillSortType": "SkillSortType",
+    "CronScheduleKind": "CronScheduleKind",
+    "CronSessionTargetMode": "CronSessionTargetMode",
+    "LocalMcpTransport": "LocalMcpTransport",
+    "SandboxLocalAccess": "SandboxLocalAccess",
+}
+# JSON 0 is an accepted wire value, so a required field is still a pointer.
+# Otherwise the Go zero value would send that choice (allowOnce, Recurring, New).
+ZERO_IS_VALID_ALIAS = {
+    "PermissionReply",
+    "BatchPermissionDecision",
+    "CronScheduleKind",
+    "CronSessionTargetMode",
+    "MarketplaceCategory",
+}
+# SessionKind accepts either a known string or the numeric enum. The other two
+# names have no recovered reader. All three stay Scalar.
+LOSSLESS_ALIAS = {
+    "SessionKind",
+    "CloudCronScheduleKind",
+    "WorkShareKind",
+}
+
+
 def go_from_ts(ts: str, optional: bool) -> str | None:
     if ts == "string":
         return "*string" if optional else "string"
@@ -561,10 +613,19 @@ def go_from_ts(ts: str, optional: bool) -> str | None:
         return "map[string]string"
     if ts == "Record<string, Record<string, string>>":
         return "map[string]map[string]string"
-    # Erased TypeScript alias used as a scalar binding. The HTTP binder accepts
-    # a JSON string for these (valueKind scalar, not number or boolean).
+    if ts in PROVEN_STRING_ALIAS:
+        go = PROVEN_STRING_ALIAS[ts]
+        return f"*{go}" if optional else go
+    if ts in PROVEN_INT_ALIAS:
+        go = PROVEN_INT_ALIAS[ts]
+        if optional or ts in ZERO_IS_VALID_ALIAS:
+            return f"*{go}"
+        return go
+    if ts in LOSSLESS_ALIAS:
+        return "*Scalar" if optional else "Scalar"
+    # An unrecognized alias is not a string. Keep the JSON literal.
     if ts and ts[0].isupper() and not ts.endswith("[]") and "<" not in ts:
-        return "*string" if optional else "string"
+        return "*Scalar" if optional else "Scalar"
     return None
 
 
@@ -952,7 +1013,7 @@ def render_inventory_md(methods) -> str:
         "",
         f"Denominator: **{len(methods)}** methods. `RawCall` is not one of them.",
         "",
-        "Scalar means the IDL schema recorded `kind: scalar` and no single binding or structFields tsType was found for that struct field. A TypeScript alias that is still a scalar binding is generated as `string`, because the HTTP binder only accepts a JSON string, number, or boolean and the alias is not numeric or boolean.",
+        "Scalar means the JSON literal is preserved. That is either a schema `kind: scalar` with no single binding or structFields tsType, or an alias whose wire primitive was not recovered. Aliases are typed only when a 0.7.8 handler shows the JSON value. `SessionKind` stays Scalar because the server accepts both the strings conversation, task, peek, channel, cron, unknown and the numbers 0 through 5. `CloudCronScheduleKind` and `WorkShareKind` stay Scalar because no reader was recovered.",
         "",
         "Drive paths are rewritten to the website gateway before the IDL response encoder. Those methods return `DriveGatewayResp` (`base_resp` plus the raw JSON body). The IDL response struct is not applied on that path.",
         "",
@@ -1117,7 +1178,7 @@ def main(argv: list[str]) -> None:
     if len(argv) < 2:
         raise SystemExit("usage: gen_desktop.py <tarball> [research.json]")
     tarball = Path(argv[1])
-    research = Path(argv[2]) if len(argv) > 2 else None
+    research = Path(argv[2]) if len(argv) > 2 else ROOT / "internal" / "inventory" / "categories.json"
     src = load_chunk(tarball)
     schemas_by_ident, schemas_by_name, raw_methods, arrays = extract(src)
     prepare_schemas(schemas_by_ident)

@@ -4,7 +4,7 @@ Generated from `@minimax-ai/code` 0.7.8 IDL tables (`k` unary and `Yi` SSE) cros
 
 Denominator: **470** methods. `RawCall` is not one of them.
 
-Scalar means the IDL schema recorded `kind: scalar` and no single binding or structFields tsType was found for that struct field. A TypeScript alias that is still a scalar binding is generated as `string`, because the HTTP binder only accepts a JSON string, number, or boolean and the alias is not numeric or boolean.
+Scalar means the JSON literal is preserved. That is either a schema `kind: scalar` with no single binding or structFields tsType, or an alias whose wire primitive was not recovered. Aliases are typed only when a 0.7.8 handler shows the JSON value. `SessionKind` stays Scalar because the server accepts both the strings conversation, task, peek, channel, cron, unknown and the numbers 0 through 5. `CloudCronScheduleKind` and `WorkShareKind` stay Scalar because no reader was recovered.
 
 Drive paths are rewritten to the website gateway before the IDL response encoder. Those methods return `DriveGatewayResp` (`base_resp` plus the raw JSON body). The IDL response struct is not applied on that path.
 

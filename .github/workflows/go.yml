@@ -1,0 +1,81 @@
+name: go
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# No job in this file receives secrets. Do not switch the app-server job to
+# pull_request_target. The model-turn test is not invoked here.
+
+jobs:
+  test:
+    name: go ${{ matrix.go }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        go: ["1.22.x", "stable"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: gofmt
+        if: runner.os == 'Linux' && matrix.go == '1.22.x'
+        run: test -z "$(gofmt -l .)"
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test ./...
+      - name: race
+        if: runner.os == 'Linux'
+        run: go test -race ./...
+      - name: build
+        run: go build ./...
+
+  codegen:
+    name: reproducible generation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+      - name: regenerate from the pinned tarball
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/minimax-ai-code-0.7.8.tgz https://registry.npmjs.org/@minimax-ai/code/-/code-0.7.8.tgz
+          echo "f497f02bac0f8fc8ad3791d59e8827208684ab466bec94cd7702594d19f5735a  /tmp/minimax-ai-code-0.7.8.tgz" | sha256sum -c
+          python3 tools/gen_desktop.py /tmp/minimax-ai-code-0.7.8.tgz
+          gofmt -w desktop/zz_types_gen.go desktop/zz_methods_gen.go desktop/zz_catalog_gen.go
+          git diff --exit-code
+
+  app-server:
+    name: app-server 0.7.8 protocol
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: install pinned CLI and run no-auth protocol tests
+        env:
+          MCODE_E2E: "1"
+          MCODE_BIN: node
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/minimax-ai-code-0.7.8.tgz https://registry.npmjs.org/@minimax-ai/code/-/code-0.7.8.tgz
+          echo "f497f02bac0f8fc8ad3791d59e8827208684ab466bec94cd7702594d19f5735a  /tmp/minimax-ai-code-0.7.8.tgz" | sha256sum -c
+          mkdir -p "$RUNNER_TEMP/mcode"
+          npm install --prefix "$RUNNER_TEMP/mcode" /tmp/minimax-ai-code-0.7.8.tgz
+          MCODE_LEADING="$RUNNER_TEMP/mcode/node_modules/@minimax-ai/code/cli.js" \
+            go test -count=1 -timeout 10m -run 'TestLiveAppServer|TestLiveUnixHealth' ./appserver

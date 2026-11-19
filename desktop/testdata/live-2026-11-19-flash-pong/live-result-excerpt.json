@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "aborted": true,
+  "stream_completed": true,
+  "assistant_text_live_raw": "Reply with exactly the single word pong and nothing else. Do not call tools or run commands.pong",
+  "events": [
+    {
+      "kind": "heartbeat"
+    },
+    {
+      "kind": "event",
+      "type": "session.created"
+    },
+    {
+      "kind": "session_stream",
+      "type": "query_collapse_view"
+    },
+    {
+      "kind": "event",
+      "type": "session.start"
+    },
+    {
+      "kind": "session_stream",
+      "type": "query_collapse_view"
+    },
+    {
+      "kind": "session_stream",
+      "type": "finished"
+    },
+    {
+      "kind": "session_stream",
+      "type": "session_status"
+    }
+  ],
+  "usage": {
+    "agent_message.usage": {
+      "cache_read": 128,
+      "context_window": 512000,
+      "decode_duration_ms": 214,
+      "input_tokens": 17248,
+      "output_tokens": 3,
+      "request_duration_ms": 2700,
+      "total_tokens": 17379
+    }
+  },
+  "session_id": "mvs_b9a26f0ad5034df3ba36eae109812529",
+  "note": "Excerpt of the saved live result for offline tests. Not a live rerun."
+}

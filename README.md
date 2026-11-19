@@ -30,7 +30,6 @@ Verified tarball SHA-256:
 export MCODE_BIN=mcode
 export MCODE_DATA_DIR="$PWD/.mcode-data"
 export MCODE_WORKSPACE="$PWD"
-export MCODE_AUTH_MODE=desktop
 go run ./examples/quickstart
 ```
 
@@ -47,7 +46,10 @@ client, err := appserver.Start(ctx, appserver.Options{
     Command:   "mcode",
     DataDir:   dataDir,
     Workspace: workspace,
-    AuthMode:  "desktop", // or "remote-oauth"; empty uses the CLI default
+    // Leave AuthMode empty. The CLI then uses remote-oauth and a headless
+    // API-key provider can answer SendMessage. AuthMode "desktop" is a
+    // Desktop lease, not the model provider; without that lease SendMessage
+    // returns 503 local_runtime_auth_pending.
 })
 if err != nil {
     log.Fatal(err)
@@ -73,9 +75,9 @@ agents, err := client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 The full method table is [docs/method-inventory.md](docs/method-inventory.md). The API guide is [docs/api.md](docs/api.md). A Chinese walkthrough is [docs/getting-started.zh-CN.md](docs/getting-started.zh-CN.md).
 
-The 470 methods are the frozen IDL surface. The process also serves `/mavis/api/...` dispatcher leaves (permission, content, browser, communication, cron, matrix, usage, fs, file, git, runtime, diagnostics). Those are named methods on `mavis.Client`. `mavis.Raw` remains only for a path that is not in that list. Agent routes past `GET /agent/session/:id` and `POST /agent` are still delegated inside the CLI and are not a closed leaf list.
+The 470 methods are the frozen IDL surface. The process also serves `/mavis/api/...` dispatcher leaves (permission, content, browser, communication, cron, matrix, usage, fs, file, git, runtime, diagnostics, and the agent routes `cTu` actually calls). Those are named methods on `mavis.Client`. `GET /mavis/api/agent/{name}` with no further segment is implemented inside `routeResolvedAgent` but `cTu` does not call it, so that info route is not on the client. `mavis.Raw` remains for a path outside that list.
 
-Request bindings no longer use `Scalar`. The aliases that used to be opaque (`PermissionReply`, `LocalHookScope`, and the other erased names) are JSON strings: the binder's `valueKind` is scalar and the alias is not `number` or `boolean`. `Record<string, string>` fields are `map[string]string`. Nested and response structs still have **2,818** `Scalar` fields and **2,145** fields with a declared Go type. A field stays `Scalar` only when the schema says `kind: scalar` and no binding or `structFields` entry gives one `tsType` for that struct field. Drive methods return `DriveGatewayResp`: `base_resp.status_code` / `status_msg`, plus `Raw` for the rest of the gateway JSON. The IDL response encoder does not run on those 13 paths.
+Alias fields are typed only when a 0.7.8 handler shows the JSON value. `PermissionReply` and `BatchPermissionDecision` are the numbers 0, 1, and 2, not the strings `deny` or `allowOnce`. `AgentShellPreference` is `auto`, `powershell`, or `git-bash`. `LocalHookScope` is 1 or 2. `SessionKind` stays `Scalar` because the server accepts either the known strings or the numbers 0 through 5. `CloudCronScheduleKind` and `WorkShareKind` stay `Scalar` because no reader was recovered. Request structs still have those `Scalar` fields, plus three `BaseReq` fields whose wire values were not recovered. Nested and response structs still contain `Scalar` fields wherever the schema says `kind: scalar` and no single `tsType` was recovered. Drive methods return `DriveGatewayResp`: `base_resp.status_code` / `status_msg`, plus `Raw` for the rest of the gateway JSON. The IDL response encoder does not run on those 13 paths. The gateway body beyond `base_resp` is opaque on this path.
 
 `desktop.RawCall` is only the escape hatch for a method that is not in this baseline. It is not a substitute for the 470 named methods.
 
@@ -121,11 +123,23 @@ MCODE_LEADING=/path/to/@minimax-ai/code/cli.js \
 go test -count=1 -run 'TestLive' ./appserver
 ```
 
-Regenerate the IDL bindings from the pinned tarball:
+Regenerate the IDL bindings from the pinned tarball. Category labels come from `internal/inventory/categories.json`.
 
 ```bash
 python3 tools/gen_desktop.py /path/to/minimax-ai-code-0.7.8.tgz
 ```
+
+Headless API-key model turns are a separate opt-in. Prepare an isolated data directory, with the key only in the `set-minimax-key` child:
+
+```bash
+export MINIMAX_DATA_DIR="$PWD/.mcode-data"
+export MCODE_PROVIDER_API_KEY=...   # not an argument, and not committed
+mcode provider set-minimax-key --api-key-env MCODE_PROVIDER_API_KEY
+mcode provider use api-key
+mcode provider test minimax_api --json
+```
+
+Then `MCODE_E2E_LLM=1 MCODE_LLM_DATA_DIR="$MINIMAX_DATA_DIR" go test -count=1 -run TestLiveModelTurn ./appserver`. Leave `AuthMode` empty. One short "pong" prompt still used about 17k input tokens on mavis in the external run (tools and skills). Do not run it without credentials you intend to spend. GitHub Actions runs only the no-auth protocol tests.
 
 ### Results recorded against 0.7.8
 
@@ -137,8 +151,9 @@ Host: Linux 6.12, glibc 2.39, Node v22.23.4, Go 1.22.2.
 | `go test ./...` | passed |
 | `go test -race ./...` | passed |
 | `GOOS=windows GOARCH=amd64` test compile and `GOOS=windows GOARCH=arm64` example build | passed |
-| Live stdio | passed in 4.99s. Server **0.7.8**, protocol **1**, auth **desktop**. `ListAgents` returned 5. `CreateSession` + `AbortSession` succeeded for `mavis`. `GetEcho` = `get: go-sdk`. `Ping` = `pong: ping`. `GET /mavis/health` = `status=ok runtime=local-runtime`. `SubscribeGlobalEvents` delivered `kind=heartbeat` with no `type`, then closed. `GET /minimax-desktop/api/v1/does-not-exist` returned **404**. Command: `node …/cli.js app-server --stdio --foreground --data-dir <temp> --workspace <temp> --auth-mode desktop` |
-| Live unix | passed in 1.86s. `/readyz` and `/healthz` ok (version 0.7.8, protocol 1, auth `desktop`) and `ListAgents`. The socket directory must be mode `0700`. |
+| Live stdio, no model turn | passed in 4.99s on this workspace. Server **0.7.8**, protocol **1**, auth **desktop**. `ListAgents` returned 5. `CreateSession` + `AbortSession` succeeded for `mavis`. `GetEcho` = `get: go-sdk`. `Ping` = `pong: ping`. `GET /mavis/health` = `status=ok runtime=local-runtime`. `SubscribeGlobalEvents` delivered `kind=heartbeat` with no `type`, then closed. `GET /minimax-desktop/api/v1/does-not-exist` returned **404**. Command included `--auth-mode desktop`. This run did not call `SendMessage`. |
+| Live unix, no model turn | passed in 1.86s. `/readyz` and `/healthz` ok (version 0.7.8, protocol 1, auth `desktop`) and `ListAgents`. The socket directory must be mode `0700`. |
+| External API-key model turn | Not run in this workspace and not run by GitHub Actions. An external consumer of commit `869b4ba` (`v0.0.0-20261119103415-869b4ba56f53`) on 2026-11-19 18:47 Asia/Shanghai omitted `AuthMode`, advertised auth mode `remote-oauth`, and completed `minimax` / `MiniMax-M3.1-Flash`. The saved live result's naive text walker concatenated the prompt and `pong`. Offline correction of that same turn, with `live_rerun: false`, recovered assistant text `pong`, `output_tokens` 3, and `input_tokens` 17248. Completion was the recorded stream events `finished` and `session_status` plus ledger `stopReason=stop`. Cleanup was `aborted: true` and abort HTTP 200. Raw `SessionStreamFrameView` bytes were not saved; the fixture under `desktop/testdata/live-2026-11-19-flash-pong` is a reconstructed 0.7.8 shape, not a wire replay. The same consumer at 18:46 with `AuthMode=desktop` got HTTP 503 `local_runtime_auth_pending` on `SendMessage` after `provider test minimax_api` had already succeeded. |
 
 No login, no message send, and no account mutation were performed.
 

@@ -2,10 +2,12 @@
 // DesktopService IDL registrar.
 //
 // The 0.7.8 dispatcher stubs /mavis/health, /mavis/api/version, and
-// /mavis/api/update. It also exposes a small set of /mavis/api runtime and
-// config reads. Leaf routes behind the other /mavis routers are not a closed
-// set; use Raw for those until a leaf inventory exists. Responses whose schema
-// was not recovered are RawDocument values.
+// /mavis/api/update. Named methods cover the dispatcher leaves that were
+// recovered, including the agent routes cTu actually calls. GET
+// /mavis/api/agent/{name} is implemented on routeResolvedAgent as "GET " but
+// cTu only calls routeAgentApi when the path has more than two segments, so
+// that info route is not reached. Responses whose schema was not recovered
+// stay raw. Drive paths stay on desktop.Client.
 package mavis
 
 import (

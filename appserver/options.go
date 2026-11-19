@@ -37,7 +37,12 @@ type Options struct {
 	SocketPath string
 	DataDir    string
 	Workspace  string
-	// AuthMode is "remote-oauth" or "desktop". Empty omits the flag.
+	// AuthMode is the process flag --auth-mode: "remote-oauth" or "desktop".
+	// Empty omits the flag. The CLI then reports remote-oauth. That omitted
+	// flag is what completed a headless API-key SendMessage. "desktop" requires
+	// a Desktop authentication lease; without it SendMessage returns 503
+	// local_runtime_auth_pending. This flag is not the model provider. An API
+	// key is selected with `mcode provider use api-key` in the data directory.
 	AuthMode string
 	// Region is "cn" or "global". Empty omits the flag.
 	Region    string

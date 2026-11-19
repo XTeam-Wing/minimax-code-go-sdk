@@ -17,7 +17,10 @@ import (
 // TestLiveAppServer drives the official @minimax-ai/code app-server.
 // It is not a mock. Set MCODE_E2E=1 and point MCODE_BIN / MCODE_LEADING at the
 // installed CLI. The test uses a temporary data directory and workspace and
-// only calls read-only methods plus creating and aborting one local session. It does not send a model turn.
+// only calls read-only methods plus creating and aborting one local session.
+// It does not send a model turn. AuthMode desktop is intentional here: this
+// process has no API key and does not call SendMessage. A headless API-key
+// model turn must omit AuthMode. See TestLiveModelTurn.
 func TestLiveAppServer(t *testing.T) {
 	if os.Getenv("MCODE_E2E") != "1" {
 		t.Skip("set MCODE_E2E=1 to run the official app-server")
