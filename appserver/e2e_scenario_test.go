@@ -131,6 +131,20 @@ func TestLiveGoalAndSubagent(t *testing.T) {
 		}
 	}()
 
+	before, err := globalSelectedKey(ctx, desk)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := selectSessionScenario(ctx, desk, sessionID); err != nil {
+		t.Fatalf("session model: %v", err)
+	}
+	after, err := globalSelectedKey(ctx, desk)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after != before {
+		t.Fatalf("session SelectModel changed the process selection from %q to %q", before, after)
+	}
 	objective := "Use the Agent tool to spawn exactly one subagent whose only job is to reply pong. Do not use any other tool."
 	budget := desktop.Number(24000)
 	if raw := os.Getenv("MCODE_E2E_GOAL_TOKEN_BUDGET"); raw != "" {

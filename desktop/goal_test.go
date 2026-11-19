@@ -69,7 +69,7 @@ func TestGoalRequestsDoNotInventEffort(t *testing.T) {
 		t.Fatal(text)
 	}
 	session := "s1"
-	effort := "caller-selected"
+	effort := "high"
 	selected, err := json.Marshal(SelectModelReq{
 		ProviderID: "minimax_api",
 		ModelID:    "MiniMax-M3.1-Flash",
@@ -84,7 +84,18 @@ func TestGoalRequestsDoNotInventEffort(t *testing.T) {
 		t.Fatal(err)
 	}
 	thinking, _ := got["thinking"].(map[string]any)
-	if thinking["effort"] != effort || got["provider_id"] != "minimax_api" || got["model_id"] != "MiniMax-M3.1-Flash" || got["session_id"] != session {
+	if thinking["effort"] != "high" || got["provider_id"] != "minimax_api" || got["model_id"] != "MiniMax-M3.1-Flash" || got["session_id"] != session {
 		t.Fatal(string(selected))
+	}
+	global, err := json.Marshal(SelectModelReq{
+		ProviderID: "minimax_api",
+		ModelID:    "MiniMax-M3.1-Flash",
+		Thinking:   &ModelThinkingInput{Effort: &effort},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(global), "session_id") {
+		t.Fatal(string(global))
 	}
 }

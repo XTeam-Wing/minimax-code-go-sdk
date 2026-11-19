@@ -32,12 +32,15 @@ const (
 // That key drops thinking. The task selection is therefore model only.
 // When that string does not match the parent session model, the source
 // task-model-override requires effort, reasoning, or variant on that
-// selection. CreateGoal and PatchGoal have no effort field. SelectModel
-// stores a caller-supplied thinking.effort on the session; the child reads
-// it only when the model keys match, and that match does not require
-// effort. The SDK does not choose an effort. PatchGoal status complete is a
-// separate call. A prompt that mentions a goal is not evidence that a goal
-// exists.
+// selection. The prefix minimax_api is not rewritten to minimax.
+// CreateGoal and PatchGoal have no effort field. SelectModel with session_id
+// stores thinking.effort on that session. GetSession returns it at
+// session.model.thinking.effort and session.effective_model. ListModels does
+// not return the stored effort. A call without session_id writes the process
+// default and drops thinking. The same-key path uses the parent snapshot and
+// does not set requireExplicitEffort. The SDK does not choose an effort.
+// PatchGoal status complete is a separate call. A prompt that mentions a
+// goal is not evidence that a goal exists.
 const (
 	GoalSendQueue = "queue"
 	GoalSendSteer = "steer"

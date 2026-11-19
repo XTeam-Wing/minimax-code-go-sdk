@@ -108,16 +108,25 @@ func TestLiveModelTurn(t *testing.T) {
 		defer abortCancel()
 		_, _ = client.Desktop().AbortSession(abortCtx, desktop.AbortSessionReq{ID: sessionID, Reason: &reason})
 	})
-	models, err := client.Desktop().ListModels(ctx, desktop.ListModelsReq{})
+	before, err := globalSelectedKey(ctx, client.Desktop())
 	if err != nil {
-		t.Fatalf("ListModels: %v", err)
+		t.Fatal(err)
 	}
-	model := pickLiveModel(models, os.Getenv("MCODE_E2E_MODEL"))
+	if err := selectSessionScenario(ctx, client.Desktop(), sessionID); err != nil {
+		t.Fatalf("session model: %v", err)
+	}
+	after, err := globalSelectedKey(ctx, client.Desktop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after != before {
+		t.Fatalf("session SelectModel changed the process selection from %q to %q", before, after)
+	}
 	content := "Reply with exactly the single word pong and nothing else. Do not call tools or run commands."
 	stream, err := client.Desktop().SendMessage(ctx, desktop.SendMessageReq{
 		ID:      sessionID,
 		Content: &content,
-		Model:   model,
+		Model:   scenarioSelection(),
 	})
 	if err != nil {
 		t.Fatalf("SendMessage: %v\n%s", err, client.StderrTail())
@@ -146,7 +155,7 @@ func TestLiveModelTurn(t *testing.T) {
 	if !turn.SawFinished && turn.FinishReason == "" && !turn.SawSessionStatus {
 		t.Fatal("completion was not signaled by finished, session_status, or finish_reason")
 	}
-	if !turn.HasUsage || turn.OutputTokens < 1 || turn.OutputTokens > 64 {
+	if !turn.HasUsage || turn.OutputTokens < 1 || turn.OutputTokens > 16000 {
 		t.Fatalf("output tokens %d present %v", turn.OutputTokens, turn.HasUsage)
 	}
 	t.Logf("assistant=%q output_tokens=%d finished=%v session_status=%q finish_reason=%q", turn.Text, turn.OutputTokens, turn.SawFinished, turn.SessionStatus, turn.FinishReason)
@@ -155,52 +164,6 @@ func TestLiveModelTurn(t *testing.T) {
 		t.Fatalf("AbortSession: %v", err)
 	}
 	aborted = true
-}
-
-func pickLiveModel(resp desktop.ListModelsResp, override string) *desktop.ModelSelectionInput {
-	maxOut := desktop.Number(64)
-	low := "low"
-	thinking := &desktop.ModelThinkingInput{Effort: &low}
-	if override != "" {
-		provider := "minimax"
-		modelID := override
-		return &desktop.ModelSelectionInput{ProviderID: &provider, ModelID: &modelID, MaxOutputTokens: &maxOut, Thinking: thinking}
-	}
-	var selected, flash, first *desktop.ModelInfo
-	for i := range resp.Models {
-		item := &resp.Models[i]
-		if first == nil {
-			first = item
-		}
-		if item.Selected != nil {
-			if on, ok := item.Selected.Bool(); ok && on {
-				selected = item
-			}
-		}
-		if id, ok := item.ModelID.String(); ok && strings.Contains(strings.ToLower(id), "flash") && flash == nil {
-			flash = item
-		}
-	}
-	choice := selected
-	if choice == nil {
-		choice = flash
-	}
-	if choice == nil {
-		choice = first
-	}
-	if choice == nil {
-		provider := "minimax"
-		modelID := "MiniMax-M3.1-Flash"
-		return &desktop.ModelSelectionInput{ProviderID: &provider, ModelID: &modelID, MaxOutputTokens: &maxOut, Thinking: thinking}
-	}
-	sel := &desktop.ModelSelectionInput{MaxOutputTokens: &maxOut, Thinking: thinking}
-	if s, ok := choice.ProviderID.String(); ok {
-		sel.ProviderID = &s
-	}
-	if s, ok := choice.ModelID.String(); ok {
-		sel.ModelID = &s
-	}
-	return sel
 }
 
 func writeRedactedFrames(t *testing.T, frames []desktop.SessionStreamFrameView) {
