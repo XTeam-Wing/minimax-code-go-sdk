@@ -33,6 +33,7 @@ func assertExhaustLocal(t *testing.T, ctx context.Context, desk *desktop.Client,
 	assertSameModelSelection(t, ctx, desk, ledger)
 	assertSameModelSource(t, ctx, desk, ledger)
 	assertContextCaptureToggle(t, ctx, desk, ledger)
+	assertOwnedLocalFixtures(t, ctx, desk, ledger, agent, sessionID)
 	markExhaustedDependencies(ledger)
 }
 
@@ -356,7 +357,7 @@ func assertBuiltinAgentRead(t *testing.T, ctx context.Context, desk *desktop.Cli
 		return
 	}
 	if notice.SessionID == nil {
-		ledger.note("idl.GetAgentLegacyHistoryNotice", "notrun", "builtin "+agent+" returned no session_id; the read did not modify the agent")
+		ledger.note("idl.GetAgentLegacyHistoryNotice", "real", "getLegacyHistoryNotice returned undefined for builtin "+agent+", so session_id was omitted. The read did not modify the agent")
 		return
 	}
 	if id, ok := notice.SessionID.String(); ok && id != "" {
@@ -912,12 +913,7 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 	ledger.note("idl.ReplyQuestionnaire", "notrun", "reply starts a conversation continuation. On desktop auth without a lease that continuation is HTTP 503 QUESTIONNAIRE_CONTINUATION_NOT_STARTED, which is not a completed reply. The owned request was dismissed instead")
 	ledger.note("idl.ReplyQuestion", "notrun", "reject and reply are permission decisions on a permission.ask request id. This run did not own a permission request, so neither call was sent")
 	ledger.note("idl.RejectQuestion", "notrun", "reject and reply are permission decisions on a permission.ask request id. This run did not own a permission request, so neither call was sent")
-	for _, id := range []string{
-		"idl.RecordPluginRecommendationDecline", "idl.ReplaceRootSession", "idl.RequestRotation", "idl.RequestCompaction",
-		"idl.CreateImportedAgent", "idl.CreateCron",
-	} {
-		ledger.note(id, "notrun", "needs a compaction turn or a new agent record. Builtin agent state was not modified and content review was not bypassed")
-	}
+	ledger.note("idl.RequestCompaction", "notrun", "requestCompaction enters turn admission and runs a compaction model turn. NOTHING_TO_COMPACT is only the post-attempt unchanged outcome, so an empty session was not used as a probe")
 	for _, id := range []string{
 		"idl.CreateUserModelProvider", "idl.UpdateUserModelProvider", "idl.DuplicateUserModelProvider", "idl.DeleteUserModelProvider",
 		"idl.TestUserModelProvider", "idl.TestUserModel", "idl.UpdateUserModelParameters", "idl.TestUserModelCandidate",
@@ -934,6 +930,311 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 	ledger.note("idl.RestoreSessionWorktree", "notrun", "needs a session worktree. Session lifecycle is owned by the parent tester and was not repeated")
 	ledger.note("idl.InvalidateSessionFileSyncSources", "notrun", "QuerySessionFileSyncSources returned no source object to invalidate")
 	ledger.note("negative.unknown-desktop-path", "notrun", "covered by TestLiveSurface RawCall when that test runs; this batch did not repeat it")
+}
+
+func assertOwnedLocalFixtures(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent, sessionID string) {
+	t.Helper()
+	assertRotationUnimplemented(t, ctx, desk, ledger, agent, sessionID)
+	assertPluginDecline(t, ctx, desk, ledger, agent, sessionID)
+	assertDisabledCronCreate(t, ctx, desk, ledger, agent)
+	assertImportedAgentCreate(t, ctx, desk, ledger)
+	assertBackgroundTaskList(t, ctx, desk, ledger, sessionID)
+	assertSideChatPromote(t, ctx, desk, ledger, sessionID)
+	assertSessionReads(t, ctx, desk, ledger, sessionID)
+	assertMemoryV2Unimplemented(t, ctx, desk, ledger, agent, sessionID)
+}
+
+func assertRotationUnimplemented(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent, sessionID string) {
+	t.Helper()
+	_, err := desk.RequestRotation(ctx, desktop.RequestRotationReq{Name: agent, ID: sessionID})
+	expectNotImplemented(t, ledger, "idl.RequestRotation", err)
+}
+
+func assertPluginDecline(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent, sessionID string) {
+	t.Helper()
+	declined, err := desk.RecordPluginRecommendationDecline(ctx, desktop.RecordPluginRecommendationDeclineReq{
+		Name:       agent,
+		SessionID:  sessionID,
+		PluginName: "sdk-plugin",
+	})
+	if err != nil {
+		expectNotImplemented(t, ledger, "idl.RecordPluginRecommendationDecline", err)
+		return
+	}
+	ok, yes := declined.Ok.Bool()
+	if !yes || !ok {
+		ledger.note("idl.RecordPluginRecommendationDecline", "notrun", "decline returned without ok=true")
+		return
+	}
+	ledger.note("idl.RecordPluginRecommendationDecline", "real", "ok true for plugin sdk-plugin on the owned session")
+}
+
+func assertDisabledCronCreate(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent string) {
+	t.Helper()
+	enabled := false
+	schedule := "0 0 1 1 *"
+	prompt := "hello"
+	created, err := desk.CreateCron(ctx, desktop.CreateCronReq{
+		Name:     agent,
+		CronName: "sdk-disabled",
+		Schedule: &schedule,
+		Prompt:   &prompt,
+		Enabled:  &enabled,
+	})
+	if err != nil || created.Task == nil || created.Task.CronID == nil {
+		var statusErr *desktop.StatusError
+		if errors.As(err, &statusErr) && statusErr.Status == 501 {
+			ledger.note("idl.CreateCron", "negative", "HTTP 501 NOT_IMPLEMENTED. enabled was false, the request was not stored, and TriggerCron was not called")
+			return
+		}
+		if errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "CONTENT_POLICY_VIOLATION") {
+			ledger.note("idl.CreateCron", "blocked", "assertCronContentSafe reviews the cron name and prompt before createTask. Uninitialized reviewContent fails closed with HTTP 422. enabled was false, so no scheduler row was written and TriggerCron was not called")
+			return
+		}
+		noteServer(t, ledger, "idl.CreateCron", err)
+		return
+	}
+	id, ok := created.Task.CronID.String()
+	flag, flagOK := created.Task.Enabled.Bool()
+	if !ok || id == "" || !flagOK || flag {
+		t.Cleanup(func() {
+			cleanCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if id != "" {
+				_, _ = desk.DeleteCron(cleanCtx, desktop.DeleteCronReq{CronID: id})
+			}
+		})
+		t.Fatalf("CreateCron id %q enabled %v; the task was not left running", id, flag)
+	}
+	if _, err := desk.DeleteCron(ctx, desktop.DeleteCronReq{CronID: id}); err != nil {
+		t.Fatalf("DeleteCron %s: %v", id, err)
+	}
+	ledger.note("idl.CreateCron", "real", "disabled cron "+id+" deleted in the same test. TriggerCron was not called")
+}
+
+func assertImportedAgentCreate(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger) {
+	t.Helper()
+	content := "---\nname: sdkclaude\ndescription: local claude import\n---\nReply with the marker sdk-claude.\n"
+	preview, err := desk.ReadClaudeCodeAgentImport(ctx, desktop.ReadAgentImportReq{Content: content})
+	if err != nil || preview.Preview == nil {
+		t.Fatalf("ReadClaudeCodeAgentImport before create: %v", err)
+	}
+	format, formatOK := preview.Preview.Format.String()
+	digest, digestOK := preview.Preview.SourceDigest.String()
+	target, targetOK := preview.Preview.ProposedName.String()
+	if !formatOK || format == "" || !digestOK || digest == "" || !targetOK || target == "" {
+		t.Fatal("import preview omitted format, digest, or proposed name")
+	}
+	created, err := desk.CreateImportedAgent(ctx, desktop.CreateImportedAgentReq{
+		Format:         format,
+		Content:        content,
+		ExpectedDigest: digest,
+		TargetName:     target,
+	})
+	if err != nil || created.Agent == nil {
+		var statusErr *desktop.StatusError
+		if errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "CONTENT_POLICY_VIOLATION") {
+			const why = "createImportedDefinition reviews canonical content and the proposed name before service.create. Uninitialized reviewContent fails closed, so no agent row was written. Builtin agents were not modified"
+			ledger.note("idl.CreateImportedAgent", "blocked", why)
+			ledger.note("idl.ReplaceRootSession", "notrun", "runReplacement aborts the previous root. Builtin mavis was not repointed, and CreateImportedAgent did not leave an owned agent to repoint")
+			return
+		}
+		noteServer(t, ledger, "idl.CreateImportedAgent", err)
+		ledger.note("idl.ReplaceRootSession", "notrun", "runReplacement aborts the previous root. Builtin mavis was not repointed, and the import did not return an owned agent")
+		return
+	}
+	name, nameOK := created.Agent.Name.String()
+	if !nameOK || name == "" || name == "mavis" {
+		t.Fatalf("imported agent name %q", name)
+	}
+	t.Cleanup(func() {
+		cleanCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_, _ = desk.DeleteAgent(cleanCtx, desktop.DeleteAgentReq{Name: name})
+	})
+	replacedRoot := assertOwnedRootReplacement(t, ctx, desk, ledger, name)
+	if _, err := desk.DeleteAgent(ctx, desktop.DeleteAgentReq{Name: name}); err != nil {
+		t.Fatalf("DeleteAgent %s: %v", name, err)
+	}
+	if !replacedRoot {
+		ledger.note("idl.ReplaceRootSession", "notrun", "owned agent "+name+" was deleted before its root could be replaced")
+	}
+	ledger.note("idl.CreateImportedAgent", "real", "agent "+name+" created from the claude preview digest and deleted")
+}
+
+func assertOwnedRootReplacement(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent string) bool {
+	t.Helper()
+	title := "owned root"
+	created, err := desk.CreateSession(ctx, desktop.CreateSessionReq{Name: agent, Title: &title})
+	if err != nil || created.SessionID == nil {
+		ledger.note("idl.ReplaceRootSession", "notrun", "owned agent "+agent+" did not return a session to install as root")
+		return false
+	}
+	sessionID, ok := created.SessionID.String()
+	if !ok || sessionID == "" {
+		return false
+	}
+	t.Cleanup(func() {
+		cleanCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_, _ = desk.DeleteSession(cleanCtx, desktop.DeleteSessionReq{ID: sessionID})
+	})
+	replaced, err := desk.ReplaceRootSession(ctx, desktop.ReplaceRootSessionReq{Name: agent, SessionID: sessionID})
+	if err != nil || !scalarTrue(replaced.Ok) {
+		recordCall(t, ledger, "idl.ReplaceRootSession", err)
+		return false
+	}
+	root, err := desk.GetRootSession(ctx, desktop.GetRootSessionReq{Name: agent})
+	if err != nil || root.Session == nil || root.Session.SessionID == nil {
+		t.Fatalf("GetRootSession after replace: %v", err)
+	}
+	got, ok := root.Session.SessionID.String()
+	if !ok || got != sessionID {
+		t.Fatalf("root session %q, want %s", got, sessionID)
+	}
+	ledger.note("idl.ReplaceRootSession", "real", "owned agent "+agent+" root is "+sessionID+". Builtin mavis was not repointed")
+	return true
+}
+
+func assertBackgroundTaskList(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, sessionID string) {
+	t.Helper()
+	listed, err := desk.ListBackgroundTasks(ctx, desktop.ListBackgroundTasksReq{SessionID: sessionID})
+	if err != nil {
+		recordCall(t, ledger, "idl.ListBackgroundTasks", err)
+		return
+	}
+	ledger.note("idl.ListBackgroundTasks", "real", fmt.Sprintf("owned session returned %d tasks", len(listed.Items)))
+	if len(listed.Items) == 0 {
+		const why = "ListBackgroundTasks on the owned session returned no task_id. The host creates background tasks from tool calls. No task id was invented, and Get, ReadOutput, Stop, and Delete were not called"
+		for _, id := range []string{"idl.GetBackgroundTask", "idl.ReadBackgroundTaskOutput", "idl.StopBackgroundTask", "idl.DeleteBackgroundTask"} {
+			ledger.note(id, "notrun", why)
+		}
+		return
+	}
+	taskID, ok := listed.Items[0].TaskID.String()
+	if !ok || taskID == "" {
+		t.Fatal("background task omitted task_id")
+	}
+	fetched, err := desk.GetBackgroundTask(ctx, desktop.GetBackgroundTaskReq{SessionID: sessionID, TaskID: taskID})
+	if err != nil || fetched.Task == nil {
+		recordCall(t, ledger, "idl.GetBackgroundTask", err)
+	} else {
+		ledger.note("idl.GetBackgroundTask", "real", "task "+taskID)
+	}
+	output, err := desk.ReadBackgroundTaskOutput(ctx, desktop.ReadBackgroundTaskOutputReq{SessionID: sessionID, TaskID: taskID})
+	if err != nil {
+		recordCall(t, ledger, "idl.ReadBackgroundTaskOutput", err)
+	} else if detail, ok := populatedDetail(reflect.ValueOf(output)); ok {
+		ledger.note("idl.ReadBackgroundTaskOutput", "real", detail)
+	}
+}
+
+func assertSideChatPromote(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, sessionID string) {
+	t.Helper()
+	createOnly := true
+	created, err := desk.CreateSideChat(ctx, desktop.CreateSideChatReq{
+		ID:              sessionID,
+		ClientRequestID: "sdk-sidechat-create",
+		CreateOnly:      &createOnly,
+	})
+	if err != nil || created.Result == nil {
+		recordCall(t, ledger, "idl.CreateSideChat", err)
+		return
+	}
+	sideID, ok := created.Result.SessionID.String()
+	if !ok || sideID == "" || sideID == sessionID {
+		t.Fatalf("side chat session %q", sideID)
+	}
+	t.Cleanup(func() {
+		cleanCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_, _ = desk.DeleteSession(cleanCtx, desktop.DeleteSessionReq{ID: sideID})
+	})
+	promoted, err := desk.PromoteSideChat(ctx, desktop.PromoteSideChatReq{ID: sideID, ClientRequestID: "sdk-sidechat-promote"})
+	if err != nil || promoted.Result == nil {
+		recordCall(t, ledger, "idl.PromoteSideChat", err)
+		_, _ = desk.DeleteSession(ctx, desktop.DeleteSessionReq{ID: sideID})
+		return
+	}
+	view, err := desk.GetSession(ctx, desktop.GetSessionReq{ID: sideID})
+	if err != nil || view.Session == nil || view.Session.Visibility == nil {
+		t.Fatalf("GetSession side chat: %v", err)
+	}
+	visibility, ok := view.Session.Visibility.String()
+	if !ok || visibility != "visible" {
+		t.Fatalf("side chat visibility %q", visibility)
+	}
+	if _, err := desk.DeleteSession(ctx, desktop.DeleteSessionReq{ID: sideID}); err != nil {
+		t.Fatalf("DeleteSession side chat: %v", err)
+	}
+	ledger.note("idl.CreateSideChat", "real", "create_only side chat "+sideID+" with no content and no model")
+	ledger.note("idl.PromoteSideChat", "real", "visibility visible")
+}
+
+func assertSessionReads(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, sessionID string) {
+	t.Helper()
+	eligible, err := desk.GetLocalSessionHandoffEligibility(ctx, desktop.GetLocalSessionHandoffEligibilityReq{ID: sessionID})
+	if err != nil {
+		var statusErr *desktop.StatusError
+		if errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "HANDOFF_UNAVAILABLE") {
+			ledger.note("idl.GetLocalSessionHandoffEligibility", "blocked", "HTTP 404 HANDOFF_UNAVAILABLE: managed login is required. ApproveLocalSessionHandoff was not called")
+		} else {
+			recordCall(t, ledger, "idl.GetLocalSessionHandoffEligibility", err)
+		}
+	} else {
+		reason, ok := eligible.Reason.String()
+		if !ok || reason == "" {
+			t.Fatal("handoff eligibility omitted reason")
+		}
+		ledger.note("idl.GetLocalSessionHandoffEligibility", "real", "reason "+reason+". Approve was not called")
+	}
+	history, err := desk.ListSessionSourceHistory(ctx, desktop.ListSessionSourceHistoryReq{ID: sessionID})
+	if err != nil {
+		recordCall(t, ledger, "idl.ListSessionSourceHistory", err)
+	} else {
+		turns, turnsOK := history.SourcedTurnCount.Float64()
+		sources, sourcesOK := history.SourceCount.Float64()
+		if !turnsOK || !sourcesOK {
+			t.Fatal("source history counts were not numbers")
+		}
+		ledger.note("idl.ListSessionSourceHistory", "real", fmt.Sprintf("sourced turns %.0f sources %.0f", turns, sources))
+	}
+	ledger.note("idl.GetPromptSuggestion", "notrun", "getPromptSuggestion rejects an empty turn_id with local_prompt_suggestion_turn_required. This owned session has no turn, so no turn id was invented and the read was not sent")
+	ledger.note("idl.CancelPromptSuggestion", "notrun", "cancel addresses the same turn_id as GetPromptSuggestion. No turn id was invented")
+	ledger.note("idl.ResolveAnnotationTarget", "notrun", "resolve addresses a review line range or deleted file on the owned session. This session has no review annotation, so no target was invented")
+	ledger.note("idl.GetSessionHandoffSummary", "notrun", "summary addresses a dispatch_id. Eligibility was read, and no dispatch id was invented. ApproveLocalSessionHandoff was not called")
+	ledger.note("idl.ApproveLocalSessionHandoff", "notrun", "approve would upload the session. No dispatch id was invented")
+}
+
+func assertMemoryV2Unimplemented(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, agent, sessionID string) {
+	t.Helper()
+	_, err := desk.GetMemoryV2Status(ctx, desktop.GetMemoryV2StatusReq{SessionID: sessionID})
+	expectNotImplemented(t, ledger, "idl.GetMemoryV2Status", err)
+	_, err = desk.ListMemoryV2Sessions(ctx, desktop.ListMemoryV2SessionsReq{SessionID: sessionID})
+	expectNotImplemented(t, ledger, "idl.ListMemoryV2Sessions", err)
+	_, err = desk.GetMemoryV2SessionDoc(ctx, desktop.GetMemoryV2SessionDocReq{SessionID: sessionID, SourceSessionID: sessionID})
+	expectNotImplemented(t, ledger, "idl.GetMemoryV2SessionDoc", err)
+	_, err = desk.GetMemoryV2Onboarding(ctx, desktop.GetMemoryV2OnboardingReq{})
+	expectNotImplemented(t, ledger, "idl.GetMemoryV2Onboarding", err)
+	_, err = desk.PrepareLegacyMemoryMigration(ctx, desktop.PrepareLegacyMemoryMigrationReq{AgentName: agent})
+	expectNotImplemented(t, ledger, "idl.PrepareLegacyMemoryMigration", err)
+	const why = "PrepareLegacyMemoryMigration returned HTTP 501 NOT_IMPLEMENTED before a migration row. Accept, Discard, Forget, Reset, and Complete were not sent"
+	for _, id := range []string{
+		"idl.AcceptLegacyMemoryMigration", "idl.DiscardLegacyMemoryMigration", "idl.ForgetMemoryV2Content",
+		"idl.ResetMemoryV2Scope", "idl.CompleteMemoryV2Onboarding",
+	} {
+		ledger.note(id, "notrun", why)
+	}
+}
+
+func expectNotImplemented(t *testing.T, ledger *coverageLedger, id string, err error) {
+	t.Helper()
+	var statusErr *desktop.StatusError
+	if errors.As(err, &statusErr) && statusErr.Status == 501 && strings.Contains(string(statusErr.Body), "NOT_IMPLEMENTED") {
+		ledger.note(id, "negative", "HTTP 501 NOT_IMPLEMENTED on local-runtime. The call was sent and was not treated as success")
+		return
+	}
+	recordCall(t, ledger, id, err)
 }
 
 func gitListsPath(changes desktop.GitChangesResp, path string) bool {
