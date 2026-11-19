@@ -559,10 +559,9 @@ def collect_evidence(methods) -> None:
 
 # Go types in desktop/aliases.go. Each entry was checked against a 0.7.8
 # handler, not inferred from the alias spelling.
-PROVEN_STRING_ALIAS = {
-    "AgentShellPreference": "AgentShellPreference",
-}
+PROVEN_STRING_ALIAS = {}
 PROVEN_INT_ALIAS = {
+    "AgentShellPreference": "AgentShellPreference",
     "PermissionReply": "PermissionReply",
     "BatchPermissionDecision": "BatchPermissionDecision",
     "LocalHookScope": "LocalHookScope",
@@ -579,6 +578,7 @@ PROVEN_INT_ALIAS = {
 # JSON 0 is an accepted wire value, so a required field is still a pointer.
 # Otherwise the Go zero value would send that choice (allowOnce, Recurring, New).
 ZERO_IS_VALID_ALIAS = {
+    "AgentShellPreference",
     "PermissionReply",
     "BatchPermissionDecision",
     "CronScheduleKind",

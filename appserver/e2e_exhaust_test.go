@@ -783,10 +783,15 @@ func assertQuestionnaire(t *testing.T, ctx context.Context, desk *desktop.Client
 		t.Fatalf("BeginQuestionnaire: %v", err)
 	}
 	requestID, ok := begun.RequestID.String()
-	schema, schemaOK := begun.SchemaVersion.Float64()
+	_, schemaOK := begun.SchemaVersion.Float64()
 	steps, stepsOK := begun.StepCount.Float64()
 	if !ok || requestID == "" || !schemaOK || !stepsOK || steps != 1 {
 		t.Fatalf("questionnaire %#v", begun)
+	}
+	include := true
+	pending, err := desk.GetPendingQuestionnaire(ctx, desktop.GetPendingQuestionnaireReq{Name: agent, SessionID: sessionID, IncludeUnanswered: &include})
+	if err != nil || !questionnaireListed(pending, requestID, "Pick one.") {
+		t.Fatalf("GetPendingQuestionnaire: %v %#v", err, pending)
 	}
 	fetched, err := desk.GetQuestionnaire(ctx, desktop.GetQuestionnaireReq{Name: agent, RequestID: requestID})
 	if err != nil || fetched.Request == nil || len(fetched.Request.Steps) == 0 {
@@ -796,38 +801,44 @@ func assertQuestionnaire(t *testing.T, ctx context.Context, desk *desktop.Client
 	if !ok || gotQuestion != "Pick one." {
 		t.Fatalf("question %q", gotQuestion)
 	}
-	replied, err := desk.ReplyQuestionnaire(ctx, desktop.ReplyQuestionnaireReq{
-		Name:          agent,
-		RequestID:     requestID,
-		SchemaVersion: desktop.Number(schema),
-		Answers: []desktop.QuestionnaireReplyAnswer{{
-			StepID:            stepID,
-			SelectedOptionIds: []desktop.Scalar{optionID},
-		}},
-	})
-	ledger.note("idl.BeginQuestionnaire", "real", "request id returned step count 1")
+	dismissed, err := desk.DismissQuestionnaire(ctx, desktop.DismissQuestionnaireReq{Name: agent, RequestID: requestID})
+	if err != nil || !scalarTrue(&dismissed.Ok) {
+		t.Fatalf("DismissQuestionnaire: %v", err)
+	}
+	gotID, ok := dismissed.RequestID.String()
+	dismissedAt, atOK := dismissed.DismissedAt.Float64()
+	if !ok || gotID != requestID || !atOK || dismissedAt <= 0 {
+		t.Fatalf("dismiss %#v", dismissed)
+	}
+	after, err := desk.GetPendingQuestionnaire(ctx, desktop.GetPendingQuestionnaireReq{Name: agent, SessionID: sessionID, IncludeUnanswered: &include})
+	if err != nil || questionnaireListed(after, requestID, "Pick one.") {
+		t.Fatalf("pending after dismiss: %v %#v", err, after)
+	}
+	ledger.note("idl.BeginQuestionnaire", "real", "owned request step count 1")
+	ledger.note("idl.GetPendingQuestionnaire", "real", "pending request "+requestID+" question Pick one.")
 	ledger.note("idl.GetQuestionnaire", "real", "question Pick one.")
-	if err == nil && scalarTrue(&replied.Ok) {
-		gotID, idOK := replied.RequestID.String()
-		if !idOK || gotID != requestID {
-			t.Fatalf("reply request %q", gotID)
+	ledger.note("idl.DismissQuestionnaire", "real", "dismissed_at set and the request left the pending list")
+}
+
+func questionnaireListed(pending desktop.GetPendingQuestionnaireResp, requestID, question string) bool {
+	if pending.Request != nil && questionnaireViewMatches(*pending.Request, requestID, question) {
+		return true
+	}
+	for _, request := range pending.UnansweredRequests {
+		if questionnaireViewMatches(request, requestID, question) {
+			return true
 		}
-		ledger.note("idl.ReplyQuestionnaire", "real", "request "+requestID+" option yes")
-		return
 	}
-	var statusErr *desktop.StatusError
-	if !errors.As(err, &statusErr) || !strings.Contains(string(statusErr.Body), "QUESTIONNAIRE_CONTINUATION_NOT_STARTED") {
-		t.Fatalf("ReplyQuestionnaire: %v", err)
+	return false
+}
+
+func questionnaireViewMatches(request desktop.QuestionnaireRequestView, requestID, question string) bool {
+	id, ok := request.ID.String()
+	if !ok || id != requestID || len(request.Steps) == 0 {
+		return false
 	}
-	after, err := desk.GetQuestionnaire(ctx, desktop.GetQuestionnaireReq{Name: agent, RequestID: requestID})
-	if err != nil || after.AnsweredAt == nil {
-		t.Fatalf("answered questionnaire: %v", err)
-	}
-	answeredAt, ok := after.AnsweredAt.Float64()
-	if !ok || answeredAt <= 0 {
-		t.Fatalf("answered_at %#v", after.AnsweredAt)
-	}
-	ledger.note("idl.ReplyQuestionnaire", "negative", "HTTP 503 QUESTIONNAIRE_CONTINUATION_NOT_STARTED. The answer was stored and GetQuestionnaire answered_at is set. Continuation was not started because runtime auth is pending")
+	got, ok := request.Steps[0].Question.String()
+	return ok && got == question
 }
 
 func scalarNumber(value *desktop.Scalar) (float64, bool) {
@@ -898,12 +909,14 @@ func markExhaustedDependencies(ledger *coverageLedger) {
 	} {
 		ledger.note(id, "notrun", "skill-evolve body_json and install URL were not recovered. No invented body or external URL was sent")
 	}
+	ledger.note("idl.ReplyQuestionnaire", "notrun", "reply starts a conversation continuation. On desktop auth without a lease that continuation is HTTP 503 QUESTIONNAIRE_CONTINUATION_NOT_STARTED, which is not a completed reply. The owned request was dismissed instead")
+	ledger.note("idl.ReplyQuestion", "notrun", "reject and reply are permission decisions on a permission.ask request id. This run did not own a permission request, so neither call was sent")
+	ledger.note("idl.RejectQuestion", "notrun", "reject and reply are permission decisions on a permission.ask request id. This run did not own a permission request, so neither call was sent")
 	for _, id := range []string{
-		"idl.DismissQuestionnaire", "idl.RecordPluginRecommendationDecline",
-		"idl.ReplyQuestion", "idl.RejectQuestion", "idl.ReplaceRootSession", "idl.RequestRotation", "idl.RequestCompaction",
+		"idl.RecordPluginRecommendationDecline", "idl.ReplaceRootSession", "idl.RequestRotation", "idl.RequestCompaction",
 		"idl.CreateImportedAgent", "idl.CreateCron",
 	} {
-		ledger.note(id, "notrun", "needs a question request, compaction turn, or a new agent record. Builtin agent state was not modified and content review was not bypassed")
+		ledger.note(id, "notrun", "needs a compaction turn or a new agent record. Builtin agent state was not modified and content review was not bypassed")
 	}
 	for _, id := range []string{
 		"idl.CreateUserModelProvider", "idl.UpdateUserModelProvider", "idl.DuplicateUserModelProvider", "idl.DeleteUserModelProvider",

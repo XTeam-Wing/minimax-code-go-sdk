@@ -47,11 +47,12 @@ func TestBatchDecisionAndShellPreference(t *testing.T) {
 		t.Fatal("expected invalid batch decision")
 	}
 	pref := AgentShellPreference(9)
-	shell := PutAgentShellPreferenceReq{Preference: pref}
+	shell := PutAgentShellPreferenceReq{Preference: &pref}
 	if _, _, _, err := encodeRequest(specByName["PutAgentShellPreference"], shell); err == nil {
 		t.Fatal("expected invalid shell preference")
 	}
-	shell.Preference = AgentShellGitBash
+	valid := AgentShellGitBash
+	shell.Preference = &valid
 	_, _, body, err = encodeRequest(specByName["PutAgentShellPreference"], shell)
 	if err != nil {
 		t.Fatal(err)

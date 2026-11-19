@@ -7860,8 +7860,8 @@ type GetAgentShellStatusReq struct {
 // Field types come from IDL bindings (tsType) and nested schema names.
 // Optional values use pointers so an unset field is omitted. Kind "none" bindings, including base_req, are not sent and are omitted here.
 type PutAgentShellPreferenceReq struct {
-	Preference AgentShellPreference `json:"preference"`
-	BaseReq    *BaseReq             `json:"base_req,omitempty"`
+	Preference *AgentShellPreference `json:"preference"`
+	BaseReq    *BaseReq              `json:"base_req,omitempty"`
 }
 
 // GetSandboxStatusReq is the request for GetSandboxStatus.
