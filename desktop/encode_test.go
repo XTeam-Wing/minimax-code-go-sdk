@@ -34,6 +34,21 @@ func TestEncodeListAgentsQuery(t *testing.T) {
 	}
 }
 
+func TestEncodeSteerSessionKeepsQueueItemInBody(t *testing.T) {
+	sessionID := "mvs_example"
+	itemID := "queue_example"
+	rawURL, _, body, err := encodeRequest(specByName["SteerSession"], SteerSessionReq{ID: sessionID, QueueItemID: &itemID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rawURL != "/minimax-desktop/api/v1/session/mvs_example/steer" {
+		t.Fatalf("url %s", rawURL)
+	}
+	if string(body) != `{"queue_item_id":"queue_example"}` {
+		t.Fatalf("body %s", body)
+	}
+}
+
 func TestListSessionsNameIsThePathSegment(t *testing.T) {
 	spec := specByName["ListSessions"]
 	rawURL, _, _, err := encodeRequest(spec, ListSessionsReq{Name: "mavis"})
