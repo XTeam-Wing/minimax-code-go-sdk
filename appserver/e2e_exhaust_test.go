@@ -3,6 +3,7 @@ package appserver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"reflect"
 	"strings"
@@ -93,6 +94,34 @@ func assertReviewCommits(t *testing.T, ctx context.Context, desk *desktop.Client
 		}, "summary did not return review_snapshot_id")
 		return
 	}
+	fileID := firstReviewFileID(summary.Files)
+	if reviewResolution(readReviewSnapshot(t, ctx, desk, ledger, workspace, source, snapshot, fileID)) {
+		refreshed, err := desk.GetWorkspaceReviewSummary(ctx, desktop.GetWorkspaceReviewSummaryReq{Workspace: workspace, Source: source})
+		if err != nil {
+			recordCall(t, ledger, "idl.GetWorkspaceReviewSummary", err)
+			return
+		}
+		next, ok := refreshed.ReviewSnapshotID.String()
+		if !ok || next == "" {
+			return
+		}
+		readReviewSnapshot(t, ctx, desk, ledger, workspace, source, next, firstReviewFileID(refreshed.Files))
+	}
+}
+
+func firstReviewFileID(files []desktop.WorkspaceReviewFileView) string {
+	if len(files) == 0 {
+		return ""
+	}
+	id, ok := files[0].FileID.String()
+	if !ok {
+		return ""
+	}
+	return id
+}
+
+func readReviewSnapshot(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string, source *desktop.WorkspaceReviewSourceView, snapshot, fileID string) error {
+	t.Helper()
 	diffs, err := desk.ListWorkspaceReviewFileDiffs(ctx, desktop.ListWorkspaceReviewFileDiffsReq{
 		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot,
 	})
@@ -103,36 +132,41 @@ func assertReviewCommits(t *testing.T, ctx context.Context, desk *desktop.Client
 	} else {
 		ledger.note("idl.ListWorkspaceReviewFileDiffs", "real", "snapshot "+snapshot+" diffs "+itoaLen(len(diffs.Diffs)))
 	}
-	searched, err := desk.SearchWorkspaceReviewDiffs(ctx, desktop.SearchWorkspaceReviewDiffsReq{
-		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot, Query: "batch",
+	tracked := false
+	searched, searchErr := desk.SearchWorkspaceReviewDiffs(ctx, desktop.SearchWorkspaceReviewDiffsReq{
+		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot, Query: "batch", IncludeUntrackedFiles: &tracked,
 	})
-	if err != nil {
-		recordCall(t, ledger, "idl.SearchWorkspaceReviewDiffs", err)
+	if searchErr != nil {
+		recordCall(t, ledger, "idl.SearchWorkspaceReviewDiffs", searchErr)
 	} else if got, idOK := searched.ReviewSnapshotID.String(); !idOK || got != snapshot {
 		t.Fatalf("search snapshot %q", got)
 	} else {
 		ledger.note("idl.SearchWorkspaceReviewDiffs", "real", "snapshot "+snapshot)
 	}
-	if len(summary.Files) == 0 {
+	if fileID == "" {
 		ledger.note("idl.GetWorkspaceReviewFileContent", "notrun", "review summary listed no file id")
-		return
-	}
-	fileID, ok := summary.Files[0].FileID.String()
-	if !ok || fileID == "" {
-		ledger.note("idl.GetWorkspaceReviewFileContent", "notrun", "first review file had no file id")
-		return
+		return searchErr
 	}
 	content, err := desk.GetWorkspaceReviewFileContent(ctx, desktop.GetWorkspaceReviewFileContentReq{
 		Workspace: workspace, Source: source, ReviewSnapshotID: snapshot, FileID: fileID, Side: "new",
 	})
 	if err != nil {
 		recordCall(t, ledger, "idl.GetWorkspaceReviewFileContent", err)
-		return
+		if searchErr != nil {
+			return searchErr
+		}
+		return err
 	}
 	if got, idOK := content.FileID.String(); !idOK || got != fileID {
 		t.Fatalf("content file %q", got)
 	}
 	ledger.note("idl.GetWorkspaceReviewFileContent", "real", "file id "+fileID+" side new")
+	return searchErr
+}
+
+func reviewResolution(err error) bool {
+	var statusErr *desktop.StatusError
+	return errors.As(err, &statusErr) && strings.Contains(string(statusErr.Body), "WORKSPACE_REVIEW_RESOLUTION_FAILED")
 }
 
 func assertFileWatchAndSearch(t *testing.T, ctx context.Context, desk *desktop.Client, ledger *coverageLedger, workspace string) {
