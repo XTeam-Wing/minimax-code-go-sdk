@@ -1,6 +1,7 @@
 package desktop
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -118,6 +119,19 @@ func TestCatalogClosedSet(t *testing.T) {
 	}
 	if _, ok := seen["ReplyPermission"]; !ok || seen["ReplyPermission"].SideEffect != "approval" {
 		t.Fatal("reply permission")
+	}
+}
+
+func TestEncodeGetLlmContextCaptureUsesTheDebugPath(t *testing.T) {
+	rawURL, _, body, err := encodeRequest(specByName["GetLlmContextCapture"], GetLLMContextCaptureReq{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rawURL != "/minimax-desktop/api/v1/debug/llm-context/capture" {
+		t.Fatalf("url %s", rawURL)
+	}
+	if len(bytes.TrimSpace(body)) != 0 {
+		t.Fatalf("body %s", body)
 	}
 }
 

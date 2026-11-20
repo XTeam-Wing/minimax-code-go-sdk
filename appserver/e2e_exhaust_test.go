@@ -454,6 +454,10 @@ func assertContextCaptureToggle(t *testing.T, ctx context.Context, desk *desktop
 	t.Helper()
 	on, err := desk.PutLlmContextCapture(ctx, desktop.PutLLMContextCaptureReq{Enabled: true})
 	if err != nil {
+		if legacyInspectorHTTP500(err) {
+			ledger.note("idl.PutLlmContextCapture", "negative", legacyInspectorDoorDetail)
+			return
+		}
 		recordCall(t, ledger, "idl.PutLlmContextCapture", err)
 		return
 	}

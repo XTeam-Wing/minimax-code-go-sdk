@@ -55,7 +55,7 @@ _, err = client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 `GetBackgroundTask`、`ReadBackgroundTaskOutput`、`StopBackgroundTask`、`DeleteBackgroundTask` 只认本会话、kind 为 `bash`、且 `executionMode` 不是 `managed_foreground` 的任务。这个 id 来自本地 `bash` 工具在 `run_in_background` 为 true 时返回的 task id。子代理 id 和 sandbox 调用 id 都不是它。没有公开的 app-server 请求能插入这行。
 
-已提交回合的 `change_set_id`、`msg_id`、`tool_call_id`、llm-context 的 `call_id` 都要在 `DeleteSession` 之前从还活着的会话读出来。`GetTurnDiff` 只带会话 id 就能读到最新 change set。`ResolveAnnotationTarget` 要的是工作区审查坐标，不是会话上的 id。删会话之后，即使工作区还在，turn diff 和 source 也会因为会话不存在而失败。
+已提交回合的 `change_set_id`、`msg_id`、`tool_call_id` 都要在 `DeleteSession` 之前从还活着的会话读出来。`GetTurnDiff` 只带会话 id 就能读到最新 change set。`ResolveAnnotationTarget` 要的是工作区审查坐标，不是会话上的 id。删会话之后，即使工作区还在，turn diff 和 source 也会因为会话不存在而失败。`mcode app-server` 的 `runtimeOwnerKind` 是 `app-server`，命令行没有 inspector 开关，不会挂上 v2 适配器。`GetLlmContextCapture`、`GetLlmContextSessions`、`GetSessionLlmContextOverview` 落在 `Bwe`，抛出 `CronContractError`（501，`LLM_CONTEXT_INSPECTOR_UNSUPPORTED_ON_LEGACY_HOST`）。这个错误没有 `getResponse`，桌面路由返回 HTTP 500、`text/plain`、正文 `Internal Server Error`。抛出的 key 不在 HTTP body 里，也不在 SDK 捕获的子进程 stderr 里。`MAVIS_TUI_LLM_CONTEXT_INSPECTOR=1` 只在 `tui` 下读取，设在 `app-server` 上仍是这个 500。SDK 用 `*desktop.StatusError` 保留状态和正文，不把它解成 `capture_enabled` 或 `revision`，也不把 500 改记成 501。`GetSessionLlmContextCall` 和 `ClearSessionLlmContextHistory` 没有在这个进程上调用。
 
 ## 审批和重连
 

@@ -701,9 +701,9 @@ func noteUpstreamGaps(ledger *coverageLedger) {
 		"idl.ListModelAccessApiCandidates": "model-access candidates are unsupported on the legacy host; success needs the model-access service",
 		"idl.ListShareInstallations":       "share installations are not implemented by local-runtime; success needs the share backend",
 		"idl.GetWorkspaceFileMetadata":     "file metadata is not implemented in local-runtime-v2; success needs that file service",
-		"idl.GetLlmContextCapture":         "llm-context capture returns HTTP 500 on a complete request; success needs a working llm-context backend",
-		"idl.GetLlmContextSessions":        "llm-context sessions returns HTTP 500 on a complete request; success needs a working llm-context backend",
-		"idl.GetSessionLlmContextOverview": "session llm-context overview returns HTTP 500; success needs a working llm-context backend",
+		"idl.GetLlmContextCapture":         legacyInspectorDoorDetail,
+		"idl.GetLlmContextSessions":        legacyInspectorDoorDetail,
+		"idl.GetSessionLlmContextOverview": legacyInspectorDoorDetail,
 		"idl.UpdateProject.archive":        "archive is rejected with HTTP 400 UNSUPPORTED_PROJECT_UPDATE; supported updates are name, icon, and folder",
 	}
 	for id, detail := range gaps {
