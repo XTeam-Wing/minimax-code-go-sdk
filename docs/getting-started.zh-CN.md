@@ -65,7 +65,7 @@ _, err = client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 
 ## 方法清单
 
-470 个 DesktopService 方法都有具名 Go API，见 [method-inventory.md](method-inventory.md)。英文说明见 [api.md](api.md) 和仓库根目录的 README。
+470 个 DesktopService 方法都有具名 Go API，见 [method-inventory.md](method-inventory.md)。英文说明见 [api.md](api.md) 和仓库根目录的 README。这是客户端表面，不是 497 项现场全过。验收范围、305/19 的快照和未完成项见 [acceptance.zh-CN.md](acceptance.zh-CN.md)。
 
 470 个 IDL 方法是冻结的 DesktopService 表面。进程另外还提供 `/mavis/api/...` 分发叶子（权限、内容安全、浏览器、通信、cron、matrix、用量、文件、git、fs、runtime、diagnostics），在 `mavis.Client` 上有具名方法。`mavis.Raw` 只用于这份叶子清单之外的路径。
 

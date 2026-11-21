@@ -73,7 +73,7 @@ agents, err := client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 | JSON-RPC error codes | **11 / 11** |
 | Unix HTTP | **2 / 2**: `GET /readyz`, `GET /healthz` (unix listener only) |
 
-The full method table is [docs/method-inventory.md](docs/method-inventory.md). The API guide is [docs/api.md](docs/api.md). A Chinese walkthrough is [docs/getting-started.zh-CN.md](docs/getting-started.zh-CN.md).
+The full method table is [docs/method-inventory.md](docs/method-inventory.md). The API guide is [docs/api.md](docs/api.md). A Chinese walkthrough is [docs/getting-started.zh-CN.md](docs/getting-started.zh-CN.md). The table above is the generated client surface. It is not a live pass count. The acceptance scope, including what was not re-run on later commits, is [docs/acceptance.zh-CN.md](docs/acceptance.zh-CN.md).
 
 `SelectModel` stores a session model only when `session_id` is set. The goal scenario uses `provider_id` `minimax_api`, `model_id` `MiniMax-M3.1-Flash`, and `thinking.effort` `high`. `GetSession` reads those values back from `session.model` and `session.effective_model`. A call without `session_id` changes the process default and does not store thinking. `CreateGoal` has no effort field. `examples/sessionmodel` performs that select and readback and does not send a model turn.
 
