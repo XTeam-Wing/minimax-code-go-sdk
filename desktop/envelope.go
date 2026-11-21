@@ -15,17 +15,22 @@ import (
 // the sentence, and code such as MEMORY_DISABLED or OLD_STRING_AMBIGUOUS.
 //
 // A missing base_resp, a non-object base_resp, a missing status_code, and a
-// status_code whose JSON is not a finite number or a decimal integer are not
-// this error. Other numeric fields are not read.
+// status_code that is not a finite number are not this error. Exact zero is
+// success. A non-zero finite number that is not an int64 is still this error,
+// and RawStatus keeps the literal. Other numeric fields are not read.
 //
 // The method still returns the decoded response value, so the caller can read
 // the payload and errors.As the business error.
 type BusinessError struct {
 	Method     string
 	StatusCode int64
-	Code       string
-	Message    string
-	Body       []byte
+	// RawStatus is the original status_code literal when it is not an int64.
+	// A non-zero finite number that does not fit in an int64 still returns
+	// this error. StatusCode is then 0, and RawStatus keeps the literal.
+	RawStatus string
+	Code      string
+	Message   string
+	Body      []byte
 }
 
 func (e *BusinessError) Error() string {
@@ -41,6 +46,8 @@ func (e *BusinessError) Error() string {
 		return fmt.Sprintf("desktop: %s: %s", e.Method, code)
 	case msg != "":
 		return fmt.Sprintf("desktop: %s: %s", e.Method, msg)
+	case e.RawStatus != "":
+		return fmt.Sprintf("desktop: %s: status_code=%s", e.Method, e.RawStatus)
 	default:
 		return fmt.Sprintf("desktop: %s: status_code=%d", e.Method, e.StatusCode)
 	}
@@ -66,50 +73,65 @@ func envelopeError(method string, body []byte) error {
 	if err := json.Unmarshal(raw, &envelope); err != nil {
 		return nil
 	}
-	status, ok := envelopeStatus(envelope["status_code"])
-	if !ok || status == 0 {
+	status, rawStatus, nonzero, ok := envelopeStatus(envelope["status_code"])
+	if !ok || !nonzero {
 		return nil
 	}
 	return &BusinessError{
 		Method:     method,
 		StatusCode: status,
+		RawStatus:  rawStatus,
 		Code:       envelopeString(envelope["code"]),
 		Message:    envelopeString(envelope["status_msg"]),
 		Body:       append([]byte(nil), trimmed...),
 	}
 }
 
-func envelopeStatus(raw json.RawMessage) (int64, bool) {
+// envelopeStatus reports whether status_code is a recognized number.
+// nonzero is false only for an exact zero. An integer that fits in int64
+// is returned in code and rawLiteral is empty. Any other non-zero finite
+// number keeps its original literal in rawLiteral and still counts as nonzero.
+func envelopeStatus(raw json.RawMessage) (code int64, rawLiteral string, nonzero bool, ok bool) {
 	raw = bytes.TrimSpace(raw)
 	if len(raw) == 0 || bytes.Equal(raw, []byte("null")) {
-		return 0, false
+		return 0, "", false, false
 	}
 	if raw[0] == '"' {
 		var text string
 		if err := json.Unmarshal(raw, &text); err != nil {
-			return 0, false
+			return 0, "", false, false
 		}
 		text = strings.TrimSpace(text)
 		if text == "" || !decimalInteger(text) {
-			return 0, false
+			return 0, "", false, false
 		}
 		n, err := strconv.ParseInt(text, 10, 64)
 		if err != nil {
-			return 0, false
+			return 0, text, true, true
 		}
-		return n, true
+		return n, "", n != 0, true
 	}
 	if raw[0] == '{' || raw[0] == '[' {
-		return 0, false
+		return 0, "", false, false
 	}
-	var n float64
-	if err := json.Unmarshal(raw, &n); err != nil || math.IsNaN(n) || math.IsInf(n, 0) {
-		return 0, false
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var number json.Number
+	if err := dec.Decode(&number); err != nil {
+		return 0, "", false, false
 	}
-	if n < math.MinInt64 || n > math.MaxInt64 {
-		return 0, false
+	literal := number.String()
+	if n, err := strconv.ParseInt(literal, 10, 64); err == nil {
+		return n, "", n != 0, true
 	}
-	return int64(n), true
+	f, err := strconv.ParseFloat(literal, 64)
+	if err != nil || math.IsNaN(f) || math.IsInf(f, 0) {
+		return 0, "", false, false
+	}
+	if f == 0 {
+		return 0, "", false, true
+	}
+	return 0, literal, true, true
 }
 
 func decimalInteger(text string) bool {

@@ -3,15 +3,20 @@
 package appserver
 
 import (
-	"os"
 	"os/exec"
 )
 
 func setProcAttr(cmd *exec.Cmd) {}
 
-func terminate(proc *os.Process) {
-	if proc == nil {
+func startProcess(cmd *exec.Cmd) (func(), error) {
+	return func() {}, cmd.Start()
+}
+
+func noteLeaderStart(p *childProc) {}
+
+func terminateOwned(p *childProc) {
+	if p == nil || p.cmd == nil || p.cmd.Process == nil {
 		return
 	}
-	_ = proc.Kill()
+	_ = p.cmd.Process.Kill()
 }

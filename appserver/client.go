@@ -338,7 +338,7 @@ func (c *Client) call(ctx context.Context, method string, params any) (json.RawM
 	}
 	c.pending[id] = ch
 	c.mu.Unlock()
-	if err := c.writeJSON(wireMessage{JSONRPC: "2.0", ID: id, Method: method, Params: params}); err != nil {
+	if err := c.writeJSON(wireMessage{JSONRPC: "2.0", ID: quotedID(id), Method: method, Params: params}); err != nil {
 		c.dropPending(id)
 		return nil, err
 	}
@@ -493,7 +493,7 @@ func (c *Client) answerServer(msg inbound) {
 			Data:    json.RawMessage(`{"decision":"deny"}`),
 		}
 	}
-	resp := wireMessage{JSONRPC: "2.0", ID: msg.id}
+	resp := wireMessage{JSONRPC: "2.0", ID: msg.idRaw}
 	if rpcErr != nil {
 		resp.Error = rpcErr
 	} else {

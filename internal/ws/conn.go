@@ -143,11 +143,12 @@ func (c *Conn) WriteMessage(payload []byte, binary bool) error {
 	return c.writeFrame(opcode, payload)
 }
 
-// Close sends a close frame and closes the underlying connection.
+// Close closes the underlying connection. It does not wait for a socket
+// write to finish. A blocked WriteMessage holds the write lock, and sending
+// a close frame first would wait behind that write.
 func (c *Conn) Close() error {
 	var err error
 	c.once.Do(func() {
-		_ = c.writeFrame(0x8, []byte{0x03, 0xe8})
 		err = c.conn.Close()
 	})
 	return err

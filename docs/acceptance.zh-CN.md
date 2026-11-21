@@ -24,6 +24,10 @@ English summary: This note separates four layers. The Go SDK wraps the `@minimax
 
 这不是官方 497 项清单全部通过，也不是本文件所在的更新提交又做了一遍全量端到端。497 是 API 清单的基线算法（470 个 IDL 方法，加上清单外的请求、通知、错误码和 unix HTTP）。305 与 19 是那一次验收账，不能把两者相加说成 497 已满。
 
+`333076d5bb8df792cbab95e9d626b9111477b24b` 之后的修复覆盖进程组清理、Linux 上的 `Pdeathsig`、WebSocket `Close`、业务信封里的非整数 `status_code`、JSON-RPC id 的原始类型，以及恰好达到上限的 CRLF 帧。这些修复有离线回归。它们没有重跑上面的 305 项。
+
+`Start` 拉起的进程由 `Close` 结束。Unix 上子进程在自己的进程组里。组长已经退出时，`Close` 仍向该组发信号。Linux 用 `/proc/<pid>/stat` 的 starttime 确认 pid 还是原来的进程，避免 pid 被复用后误杀。`Pdeathsig` 只在 Linux 上设置。macOS 和其他 Unix 不设置它。父进程被直接杀死且没有走到 `Close` 时，那些系统不保证子进程退出。Windows 的 `Close` 只结束直接子进程。
+
 之后的 `acf1b394237bfcefda0e768c0104f40e228eebba` 只补充了 llm-context 在 `app-server` 上的 HTTP 500 合同测试。它没有把下面的失败改成成功。
 
 `MiniMax-M3.1-Flash` 的真实对话在父侧已有回归。本次交付拿不到 key，按约定不重跑。

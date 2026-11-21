@@ -345,6 +345,49 @@ func TestNilServerRequestDenies(t *testing.T) {
 	t.Fatalf("no denial reply: %v", srv.Lines())
 }
 
+func TestNumericServerRequestKeepsIDKind(t *testing.T) {
+	clientRead, serverWrite := io.Pipe()
+	serverRead, clientWrite := io.Pipe()
+	srv := &fakeserver.Server{In: serverRead, Out: serverWrite}
+	go srv.Serve()
+	defer serverWrite.Close()
+	defer clientWrite.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	client, err := DialStdio(ctx, clientRead, clientWrite, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	const big = "9007199254740993"
+	if _, err := serverWrite.Write([]byte("{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"permission/ask\",\"params\":{}}\n{\"jsonrpc\":\"2.0\",\"id\":" + big + ",\"method\":\"permission/ask\",\"params\":{}}\n")); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	saw7 := false
+	sawBig := false
+	for time.Now().Before(deadline) && (!saw7 || !sawBig) {
+		for _, raw := range srv.Lines() {
+			if strings.Contains(raw, `"id":7`) && strings.Contains(raw, "deny") {
+				if strings.Contains(raw, `"id":"7"`) {
+					t.Fatalf("string id: %s", raw)
+				}
+				saw7 = true
+			}
+			if strings.Contains(raw, `"id":`+big) && strings.Contains(raw, "deny") {
+				if strings.Contains(raw, `"id":"`+big+`"`) {
+					t.Fatalf("string id: %s", raw)
+				}
+				sawBig = true
+			}
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if !saw7 || !sawBig {
+		t.Fatalf("numeric denial 7=%v big=%v lines=%v", saw7, sawBig, srv.Lines())
+	}
+}
+
 func TestStdioHealthUnsupported(t *testing.T) {
 	client := pair(t, &fakeserver.Server{})
 	if _, err := client.Readyz(context.Background()); !errors.Is(err, ErrHealthUnsupported) {

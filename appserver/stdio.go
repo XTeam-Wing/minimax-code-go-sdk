@@ -70,7 +70,9 @@ func readLine(r *bufio.Reader, max int) ([]byte, error) {
 	for {
 		frag, err := r.ReadSlice('\n')
 		if len(frag) > 0 {
-			if len(buf)+len(frag) > max+1 {
+			// max+2 leaves room for a CRLF terminator. The payload check
+			// below runs after \r and \n are removed.
+			if len(buf)+len(frag) > max+2 {
 				discardLine(r, frag)
 				return nil, ErrMessageTooLarge
 			}

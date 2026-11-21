@@ -15,25 +15,37 @@ type process interface {
 }
 
 type childProc struct {
-	cmd  *exec.Cmd
-	done chan struct{}
+	cmd        *exec.Cmd
+	done       chan struct{}
+	leaderPID  int
+	startTicks uint64
+	haveStart  bool
+	release    func()
 }
 
 func (p *childProc) stop() error {
 	if p == nil || p.cmd == nil || p.cmd.Process == nil {
 		return nil
 	}
-	select {
-	case <-p.done:
-		return nil
-	default:
+	// The leader may already have exited. Descendants in its process group
+	// are still this client's processes, so stop still signals that group.
+	terminateOwned(p)
+	if p.release != nil {
+		p.release()
 	}
-	terminate(p.cmd.Process)
 	select {
 	case <-p.done:
 	case <-time.After(3 * time.Second):
 	}
 	return nil
+}
+
+func rememberLeader(p *childProc) {
+	if p == nil || p.cmd == nil || p.cmd.Process == nil {
+		return
+	}
+	p.leaderPID = p.cmd.Process.Pid
+	noteLeaderStart(p)
 }
 
 func launch(ctx context.Context, opt Options) (process, link, string, []string, []string, *tailWriter, error) {
@@ -78,19 +90,20 @@ func launch(ctx context.Context, opt Options) (process, link, string, []string, 
 	cmd := exec.Command(opt.Command, commandArgs(opt)...)
 	cmd.Env = opt.Env
 	cmd.Dir = opt.Dir
-	setProcAttr(cmd)
 	stderr := newTailWriter(64 * 1024)
 	cmd.Stderr = io.MultiWriter(opt.Stderr, stderr)
 	var lnk link
 	switch opt.Listen {
 	case ListenUnix:
 		cmd.Stdout = io.MultiWriter(opt.Stderr, stderr)
-		if err := cmd.Start(); err != nil {
+		release, err := startProcess(cmd)
+		if err != nil {
 			removeOwned(dirs)
 			return nil, nil, "", nil, nil, nil, err
 		}
-		proc := &childProc{cmd: cmd, done: make(chan struct{})}
-		go func() { _ = cmd.Wait(); close(proc.done) }()
+		proc := &childProc{cmd: cmd, done: make(chan struct{}), release: release}
+		rememberLeader(proc)
+		go func() { _ = cmd.Wait(); close(proc.done); proc.release() }()
 		if err := waitHealth(ctx, socket); err != nil {
 			_ = proc.stop()
 			removeOwned(dirs)
@@ -115,12 +128,14 @@ func launch(ctx context.Context, opt Options) (process, link, string, []string, 
 			removeOwned(dirs)
 			return nil, nil, "", nil, nil, nil, err
 		}
-		if err := cmd.Start(); err != nil {
+		release, err := startProcess(cmd)
+		if err != nil {
 			removeOwned(dirs)
 			return nil, nil, "", nil, nil, nil, err
 		}
-		proc := &childProc{cmd: cmd, done: make(chan struct{})}
-		go func() { _ = cmd.Wait(); close(proc.done) }()
+		proc := &childProc{cmd: cmd, done: make(chan struct{}), release: release}
+		rememberLeader(proc)
+		go func() { _ = cmd.Wait(); close(proc.done); proc.release() }()
 		return proc, newStdioLink(stdout, stdin), "", dirs, argv, stderr, nil
 	}
 }

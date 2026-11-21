@@ -14,6 +14,7 @@ func TestBusinessEnvelope(t *testing.T) {
 		code    string
 		message string
 		status  int64
+		raw     string
 		fail    bool
 		size    bool
 	}{
@@ -58,6 +59,35 @@ func TestBusinessEnvelope(t *testing.T) {
 			body: `{"base_resp":[]}`,
 		},
 		{
+			name:    "fractional status",
+			body:    `{"base_resp":{"status_code":0.5,"status_msg":"fraction","code":"X"}}`,
+			code:    "X",
+			message: "fraction",
+			raw:     "0.5",
+			fail:    true,
+		},
+		{
+			name: "fractional zero",
+			body: `{"new_size_bytes":4,"base_resp":{"status_code":0.0,"status_msg":"OK"}}`,
+			size: true,
+		},
+		{
+			name:    "int64 overflow",
+			body:    `{"base_resp":{"status_code":9223372036854775808,"status_msg":"overflow","code":"OVER"}}`,
+			code:    "OVER",
+			message: "overflow",
+			raw:     "9223372036854775808",
+			fail:    true,
+		},
+		{
+			name:    "exact int64 max",
+			body:    `{"base_resp":{"status_code":9223372036854775807,"status_msg":"edge","code":"EDGE"}}`,
+			code:    "EDGE",
+			message: "edge",
+			status:  9223372036854775807,
+			fail:    true,
+		},
+		{
 			name: "unsupported status",
 			body: `{"base_resp":{"status_code":"nope","status_msg":"ignored"}}`,
 		},
@@ -80,8 +110,17 @@ func TestBusinessEnvelope(t *testing.T) {
 				if !errors.As(err, &biz) {
 					t.Fatalf("error %#v", err)
 				}
-				if biz.Code != tc.code || biz.Message != tc.message || biz.StatusCode != tc.status {
+				if biz.Code != tc.code || biz.Message != tc.message {
 					t.Fatalf("business %#v", biz)
+				}
+				if tc.status != 0 && biz.StatusCode != tc.status {
+					t.Fatalf("status %d", biz.StatusCode)
+				}
+				if tc.raw != "" && biz.RawStatus != tc.raw {
+					t.Fatalf("raw status %q", biz.RawStatus)
+				}
+				if tc.raw != "" && biz.StatusCode != 0 {
+					t.Fatalf("status %d", biz.StatusCode)
 				}
 				if !strings.Contains(string(biz.Body), tc.code) {
 					t.Fatalf("body %s", biz.Body)

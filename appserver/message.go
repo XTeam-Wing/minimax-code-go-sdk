@@ -10,7 +10,7 @@ type jsonRawData = json.RawMessage
 
 type wireMessage struct {
 	JSONRPC string          `json:"jsonrpc,omitempty"`
-	ID      string          `json:"id,omitempty"`
+	ID      json.RawMessage `json:"id,omitempty"`
 	Method  string          `json:"method,omitempty"`
 	Params  any             `json:"params,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
@@ -20,6 +20,7 @@ type wireMessage struct {
 type inbound struct {
 	hasID  bool
 	id     string
+	idRaw  json.RawMessage
 	method string
 	params json.RawMessage
 	result json.RawMessage
@@ -46,12 +47,13 @@ func parseInbound(b []byte) (inbound, error) {
 		}
 	}
 	if id, ok := raw["id"]; ok && !bytes.Equal(bytes.TrimSpace(id), []byte("null")) {
-		s, ok := parseID(id)
+		s, literal, ok := parseID(id)
 		if !ok {
 			return inbound{}, &Error{Code: CodeInvalidRequest, Message: "Request id must be a string or number."}
 		}
 		msg.hasID = true
 		msg.id = s
+		msg.idRaw = literal
 	}
 	if m, ok := raw["method"]; ok {
 		if err := json.Unmarshal(m, &msg.method); err != nil || msg.method == "" {
@@ -84,16 +86,27 @@ func parseInbound(b []byte) (inbound, error) {
 	return msg, nil
 }
 
-func parseID(raw json.RawMessage) (string, bool) {
+func parseID(raw json.RawMessage) (string, json.RawMessage, bool) {
+	literal := append(json.RawMessage(nil), bytes.TrimSpace(raw)...)
 	var s string
-	if err := json.Unmarshal(raw, &s); err == nil && s != "" {
-		return s, true
+	if err := json.Unmarshal(literal, &s); err == nil && s != "" {
+		return s, literal, true
 	}
+	dec := json.NewDecoder(bytes.NewReader(literal))
+	dec.UseNumber()
 	var n json.Number
-	if err := json.Unmarshal(raw, &n); err == nil && n.String() != "" {
-		return n.String(), true
+	if err := dec.Decode(&n); err == nil && n.String() != "" {
+		return n.String(), literal, true
 	}
-	return "", false
+	return "", nil, false
+}
+
+func quotedID(id string) json.RawMessage {
+	raw, err := json.Marshal(id)
+	if err != nil {
+		return nil
+	}
+	return raw
 }
 
 // MaxMessageBytes is the app-server JSON-RPC limit (16 MiB).
