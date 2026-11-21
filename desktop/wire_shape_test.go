@@ -1,0 +1,76 @@
+package desktop
+
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+)
+
+func TestCreateSkillWireMatchesReviewer(t *testing.T) {
+	agent := "mavis"
+	body, err := json.Marshal(CreateSkillReq{
+		Name:        "helloskill",
+		Description: "hello",
+		Content:     "hello",
+		AgentName:   &agent,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"name", "description", "content", "agent_name"} {
+		if _, ok := got[key]; !ok {
+			t.Fatalf("missing %s in %s", key, body)
+		}
+	}
+	if got["name"] != "helloskill" || got["description"] != "hello" || got["content"] != "hello" {
+		t.Fatalf("wire %s", body)
+	}
+}
+
+func TestCreateGoalWireHasNoRequestOrTimeLimit(t *testing.T) {
+	budget := Number(50000)
+	objective := "write one file"
+	body, err := json.Marshal(CreateGoalReq{SessionID: "s", Objective: &objective, TokenBudget: &budget})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["token_budget"] != float64(50000) || got["objective"] != objective {
+		t.Fatalf("%s", body)
+	}
+	if _, ok := got["request_limit"]; ok {
+		t.Fatal(body)
+	}
+	if _, ok := got["active_seconds_limit"]; ok {
+		t.Fatal(body)
+	}
+}
+
+func TestCreateCronWireIncludesReviewedFields(t *testing.T) {
+	enabled := false
+	kind := CronScheduleOnce
+	mode := CronSessionTargetNew
+	when := Number(1893456000000)
+	body, err := json.Marshal(CreateCronDefinitionReq{
+		Name:          "hello note",
+		AgentName:     "mavis",
+		Prompt:        "hello",
+		Enabled:       &enabled,
+		Schedule:      &CronSchedule{Kind: &kind, RunAtMs: &when},
+		SessionTarget: &CronSessionTarget{Mode: &mode},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"name":"hello note"`) || !strings.Contains(text, `"prompt":"hello"`) || !strings.Contains(text, `"enabled":false`) {
+		t.Fatal(text)
+	}
+}

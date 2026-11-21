@@ -1,0 +1,3762 @@
+[
+  {
+    "method_name": "ListBackgroundTasks",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:session_id/background-tasks",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetBackgroundTask",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:session_id/background-tasks/:task_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ReadBackgroundTaskOutput",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:session_id/background-tasks/:task_id/output",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "StopBackgroundTask",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:session_id/background-tasks/:task_id/stop",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteBackgroundTask",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/session/:session_id/background-tasks/:task_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListModelAccess",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-access/list",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PreviewModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/preview",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ImportModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/import",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EnableModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/enable",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DisableModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/disable",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RollbackModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/rollback",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UninstallModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/uninstall",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "StartModelAccessDevSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/dev-sessions/start",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ApproveModelAccessDevRequest",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/dev-requests/approve",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "approval"
+  },
+  {
+    "method_name": "DismissModelAccessDevRequest",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/dev-requests/dismiss",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReloadModelAccessDevSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/dev-sessions/reload",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StopModelAccessDevSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/dev-sessions/stop",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PromoteModelAccessDevSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/dev-sessions/promote",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetModelAccessExtensionStatus",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/status",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ExportModelAccessPackage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/packages/export",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetModelAccessGlobal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/policy/global",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetModelAccessTarget",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/policy/target",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SyncModelAccessDelivery",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/delivery/sync",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetModelAccessDeliveryOptIn",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/delivery/opt-in",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "BeginModelAccessLogin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/login/begin",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "GetModelAccessLoginStatus",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/login/status",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "SubmitModelAccessLogin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/login/submit",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "CancelModelAccessLogin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/login/cancel",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "DiscoverModelAccessBorrow",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/borrow/discover",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UseModelAccessBorrow",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/borrow/use",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ScanModelAccessApi",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/api/scan",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListModelAccessApiCandidates",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-access/api/candidates",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ImportModelAccessApi",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/api/import",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "QueryModelAccessUsage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/usage/query",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EnableModelAccessPublicProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/public/enable",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DisableModelAccessPublicProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/public/disable",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetModelAccessFailover",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/failover/get",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetModelAccessFailover",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-access/failover/set",
+    "category": "model_access",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "Ping",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/ping",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetEcho",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetHeaderEcho",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/header_echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetPathEcho",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/path_echo/:resource_id",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetQueryBindingEcho",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/query_binding_echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetNestedQueryBindingEcho",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/nested_query_binding_echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SubmitFieldEcho",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/field_echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SubmitNestedFieldEcho",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/nested_field_echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetAgentShellStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent-shell/status",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutAgentShellPreference",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/agent-shell/preference",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSandboxStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/sandbox/status",
+    "category": "sandbox",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutSandboxConfig",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/sandbox/config",
+    "category": "sandbox",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSandboxViolations",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/sandbox/violations",
+    "category": "sandbox",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ReadCanvas",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/canvas/read",
+    "category": "canvas",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PrepareCanvasFiles",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/canvas/files/prepare",
+    "category": "canvas",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ApplyCanvasOperation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/canvas/apply",
+    "category": "canvas",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RemoveCanvasImageBackground",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/canvas/image/remove-background",
+    "category": "canvas",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "EnhanceCanvasImage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/canvas/image/enhance",
+    "category": "canvas",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListMarketplacePlugins",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/marketplace/plugins",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetMarketplacePlugin",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/marketplace/plugins/:plugin_name",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListInstalledPlugins",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/plugins/installed",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListEnabledPlugins",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/plugins/enabled",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "InstallPlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/:plugin_name/install",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UninstallPlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/:plugin_name/uninstall",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "EnablePlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/:plugin_name/enable",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DisablePlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/:plugin_name/disable",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RefreshPlugins",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/refresh",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PreviewGithubPlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/github/preview",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ImportGithubPlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/github/import",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdatePlugin",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugins/:plugin_name/update",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListPluginMarketplaces",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/plugin-marketplaces",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "AddPluginMarketplace",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugin-marketplaces",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RefreshPluginMarketplaces",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugin-marketplaces/refresh",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetPluginMarketplaceAutoUpdate",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugin-marketplaces/:marketplace_name/auto-update",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RemovePluginMarketplace",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/plugin-marketplaces/:marketplace_name/remove",
+    "category": "plugins",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListExtensionEntries",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/extension/list",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "RenderExtension",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/render",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PressExtension",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/press",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "InputExtension",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/input",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SelectExtension",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/select",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AckExtensionApplied",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/applied",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReportExtensionFallback",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/report",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AnswerExtensionQuery",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/query-answer",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CloseExtensionPane",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/extension/pane-close",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PackShareWork",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/share/pack",
+    "category": "share",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PublishShareWork",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/share/publish",
+    "category": "share",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PrepareSharedInstall",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/share/install/prepare",
+    "category": "share",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CommitSharedInstall",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/share/install/commit",
+    "category": "share",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DiscardSharedInstall",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/share/install/discard",
+    "category": "share",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListShareInstallations",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/share/installations",
+    "category": "share",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListLocalMcpServers",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/servers",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetLocalMcpServer",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/servers/:server_name",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateLocalMcpServer",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/servers",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateLocalMcpServer",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/mcp/servers/:server_name",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteLocalMcpServer",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/mcp/servers/:server_name",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "SetLocalMcpServerEnabled",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/mcp/servers/:server_name/enabled",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "TestLocalMcpServer",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/servers/:server_name/test",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetLocalMcpServerOAuthClientSecret",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/mcp/servers/:server_name/oauth/client-secret",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "ListLocalMcpAuthStates",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/auth/states",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "TestLocalMcpAuthTarget",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/auth/test",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "StartLocalMcpAuth",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/auth/start",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "CancelLocalMcpAuth",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/auth/attempts/:attempt_id/cancel",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "CompleteLocalMcpAuth",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/auth/attempts/:attempt_id/complete",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "ClearLocalMcpAuth",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/auth/clear",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "ListLocalHooks",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/hooks",
+    "category": "hooks",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateLocalHook",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/hooks",
+    "category": "hooks",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateLocalHook",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/hooks/:hook_id",
+    "category": "hooks",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteLocalHook",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/hooks/:hook_id",
+    "category": "hooks",
+    "phase": "P1",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "SetLocalHookEnabled",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/hooks/:hook_id/enabled",
+    "category": "hooks",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetLocalHookScopeEnabled",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/hook-scopes/enabled",
+    "category": "hooks",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListLocalMcpRuntimeServers",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetLocalMcpRuntimeServer",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers/:server_name",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "UpsertLocalMcpRuntimeServer",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers/:server_name",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DisableLocalMcpRuntimeServer",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers/:server_name/disable",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListLocalMcpRuntimeTools",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers/:server_name/tools",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetLocalMcpRuntimeTool",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers/:server_name/tools/:tool_name",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListLocalMcpRuntimeNativeTools",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/native-tools",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetLocalMcpRuntimeAuthStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/auth/status",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "StartLocalMcpRuntimeAuth",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/servers/:server_name/auth",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "SyncLocalMcpRuntimeServers",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/sync",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetLocalMcpRuntimeSyncStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/sync",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CallLocalMcpRuntimeTool",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/mcp/runtime/call",
+    "category": "mcp",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListModels",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/models/list",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SelectModel",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/models/select",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SelectAdvisorModel",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/models/advisor/select",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListModelProviders",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-providers/list",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListUserModelProviders",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-providers/user/list",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListByokProviderPresets",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-providers/presets",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetMiniMaxApiKeyStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-providers/minimax-api-key/status",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "UpsertMiniMaxApiKey",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/minimax-api-key/upsert",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "CreateUserModelProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/create",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateUserModelProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/update",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DuplicateUserModelProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/duplicate",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteUserModelProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/delete",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "RevealModelProviderApiKey",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/reveal-api-key",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "TestUserModelProvider",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/test",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "TestUserModel",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/models/:model_id/test",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateUserModelParameters",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/models/:model_id/parameters/update",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "TestUserModelCandidate",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-provider-candidates/user/test",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DiscoverUserModelsCandidate",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-provider-candidates/user/models/discover",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SaveUserModelProviderCandidate",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-provider-candidates/user/save",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DiscoverUserModels",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/models/discover",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "TestUserModelApiKey",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-provider-candidates/user/api-keys/test",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "UnrestUserModelApiKey",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/user/:provider_id/api-keys/:key_id/unrest",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "UpdateMinimaxModelContext",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/minimax/models/:model_id/context/update",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMinimaxModelSource",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/model-providers/minimax-source",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SetMinimaxModelSource",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/model-providers/minimax-source",
+    "category": "models",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EnsureBunny",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/ensure",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ResetBunny",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/reset",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReportBunnyViewState",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/view-state",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListAgentAssignments",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/assignments",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SetAssignmentCompletion",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/assignment/completion",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetBunnyPermissionMode",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/permission-mode",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetBunnyTaskModel",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/task-model",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListBunnyBackups",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/bunny/backups",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "RestoreBunnyBackup",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/backups/restore",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListWorkingStateEntries",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/bunny/working-state",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "AddWorkingStateEntry",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/working-state/add",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateWorkingStateEntry",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/working-state/update",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CloseWorkingStateEntry",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/working-state/close",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ConfirmWorkingStateEntry",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/working-state/confirm",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListBunnyTraceEvents",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/bunny/trace",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListBunnyTaskTelemetry",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/bunny/task-telemetry",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "AckBunnyTaskTelemetry",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/bunny/task-telemetry/ack",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListAgents",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateAgent",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetAgent",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/get",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateAgent",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/agent",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteAgent",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/delete",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "GetAgentLegacyHistoryNotice",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/legacy-history-notice/get",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetAgentConfig",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/config/get",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PutAgentConfig",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/agent/config",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReadClaudeCodeAgentImport",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent-import/claude-code/read",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReadCodexAgentImport",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent-import/codex/read",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CreateImportedAgent",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent-import/create",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PinAgent",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/pin/agent",
+    "category": "ui_desktop",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PinSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/pin/session",
+    "category": "ui_desktop",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetPinnedItemsOrder",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/preferences/pinned-items-order",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutPinnedItemsOrder",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/preferences/pinned-items-order",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetGlobalInstructions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/preferences/global-instructions",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutGlobalInstructions",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/preferences/global-instructions",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetWorkspaceIndexingPreference",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/preferences/workspace-indexing-enabled",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutWorkspaceIndexingPreference",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/preferences/workspace-indexing-enabled",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetComputerUseDefaultPreference",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/preferences/computer-use-default",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutComputerUseDefaultPreference",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/preferences/computer-use-default",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetComposerSendBehavior",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/preferences/composer-send-behavior",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutComposerSendBehavior",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/preferences/composer-send-behavior",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetComposerEnterBehavior",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/preferences/composer-enter-behavior",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutComposerEnterBehavior",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/preferences/composer-enter-behavior",
+    "category": "config",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PrewarmWorkspaceIndexing",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/workspace-indexing/prewarm",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListCrons",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/cron",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListCronSessions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/cron/:cron_id/session",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateCron",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/cron/:cron_name",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "TriggerCron",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/cron/:cron_id/trigger",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateCron",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/cron/:cron_id",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteCron",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/cron/:cron_id",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListCronDefinitions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v2/cron/definitions",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetCronDefinition",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v2/cron/definitions/:cron_id",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateCronDefinition",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v2/cron/definitions",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateCronDefinition",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v2/cron/definitions/:cron_id",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteCronDefinition",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v2/cron/definitions/:cron_id",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "TriggerCronRun",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v2/cron/definitions/:cron_id/runs",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListCronRuns",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v2/cron/definitions/:cron_id/runs",
+    "category": "cron",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateGoal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:session_id/goal",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetGoal",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:session_id/goal",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PatchGoal",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/session/:session_id/goal",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DismissGoal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:session_id/goal/dismiss",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteGoal",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/session/:session_id/goal",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListChannelBindings",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/channel",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListChannelConnections",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/channel/connections",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PrepareChannelConnection",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/channel/connections/prepare",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DisconnectChannelConnection",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/channel/connections/:connection_id/binding",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "DeleteChannelConnection",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/channel/connections/:connection_id",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "CancelChannelAuthorization",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/channel/connections/:connection_id/authorization/cancel",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "auth_credential"
+  },
+  {
+    "method_name": "UnbindChannel",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/channel/:binding_id",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "UpdateChannelBindingTarget",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/channel/:binding_id/target",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "BindTelegram",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/channel/telegram/bind",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StartWechatBind",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/channel/wechat/bind",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetWechatBindStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/channel/wechat/bind/status",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "BindFeishu",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/channel/feishu/bind",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StartLarkOnboard",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/lark/onboard/start",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetLarkOnboardStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/lark/onboard/status",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CancelLarkOnboard",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/lark/onboard/cancel",
+    "category": "channel_im",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "BeginQuestionnaire",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/questionnaire/begin",
+    "category": "questionnaire",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReplyQuestionnaire",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/questionnaire/:request_id/reply",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DismissQuestionnaire",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/questionnaire/:request_id/dismiss",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetPendingQuestionnaire",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/questionnaire/pending",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetQuestionnaire",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/questionnaire/:request_id",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetLatestPlanReview",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/:session_id/questionnaire/plan-review",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "RecordPluginRecommendationDecline",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/questionnaire/plugin-recommendation/declines",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSkillEvolveUsage",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill-evolve/usage",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ReportSkillEvolveSignal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/signal",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CancelSkillEvolveSignal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/signal/cancel",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListSkillEvolveSignals",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill-evolve/signals",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ReportSkillEvolveProposal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/proposal",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CancelSkillEvolveProposal",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/proposal/cancel",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "MarkSkillEvolveProposalActed",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/proposal/mark-acted",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListSkillEvolveProposals",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill-evolve/proposals",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSkillEvolveProposal",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill-evolve/proposal/:proposal_id",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSkillEvolveHistory",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill-evolve/history",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "TriggerSkillEvolve",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/trigger",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RequestSkillEvolveScan",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/scan-request",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RevertSkillEvolve",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/revert",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "MutateSkillEvolveLifecycle",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill-evolve/lifecycle/:action",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListSkills",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skills",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListSkillHub",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill-hub",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "InstallSkill",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill/install",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PreviewSkill",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill/preview",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CreateSkill",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/skill",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSkill",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill/:skill_name",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListSkillFiles",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill/:skill_name/files",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSkillFile",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/skill/:skill_name/file",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "DeleteSkill",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/skill/:skill_name",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "SetSkillEnabled",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/skill/:skill_name/enabled",
+    "category": "skills",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListRuntimeSkills",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/runtime/skills",
+    "category": "runtime",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListProjects",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/projects",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListProjectSessions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/project/sessions",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateProject",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateProject",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/project",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetProjectPinned",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/pin",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetProjectHidden",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/hide",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PutProjectsOrder",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/projects/order",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ArchiveProjectSessions",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/archive-sessions",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListRecentProjects",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/project/recents",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "TouchRecentProject",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/recent",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetRootSession",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/session/root",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ReplaceRootSession",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/agent/:name/session/root",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetArtifactSpaceContext",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/artifact-spaces/:id/context",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "WriteArtifactSpaceContext",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/artifact-spaces/:id/context",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListSessions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/session",
+    "category": "agents",
+    "phase": "P0",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSidebarSessionTree",
+    "http_method": "GET",
+    "path": "/archon/api/v1/sidebar/session/tree",
+    "category": "ui_desktop",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/session",
+    "category": "agents",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSessionTree",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/agent/:name/session/tree",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SearchSessions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/search",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSession",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ApproveLocalSessionHandoff",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/cloud-handoff/:dispatch_id/approve",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "approval"
+  },
+  {
+    "method_name": "GetLocalSessionHandoffEligibility",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/cloud-handoff/eligibility",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionHandoffSummary",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session-handoff/:dispatch_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "DownloadSessionResult",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/cloud-results/:result_id/download",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "OverwriteSessionResult",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/cloud-results/:result_id/overwrite",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateSession",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/session/:id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSessionUsage",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/usage",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetPeekContext",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/peek-context",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionDiff",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/diff",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "DeleteSession",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/session/:id",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ArchiveSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/archive",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CompressSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/compress",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CreateSideChat",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/sidechat",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CreateSideChatFromQueue",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/queue/:item_id/sidechat",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PromoteSideChat",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/promote",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMessages",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/message",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListSessionSourceHistory",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/sources",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionSourceDetail",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/sources/detail",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionToolCallResult",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/tool_call_result",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionForkOptions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/fork/options",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ForkSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/fork",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSessionRewindPreview",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/rewind/preview",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "RewindSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/rewind",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EditSessionMessage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/message/edit",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListSessionInputSummaries",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/input-summaries",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "InspectTurnContinuation",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/turn-continuation",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionActivity",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/activity",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "AbortSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/abort",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CancelPromptSuggestion",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/prompt-suggestion/cancel",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetPromptSuggestion",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/prompt-suggestion",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SteerSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/steer",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SendRemoteMessage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/remote-message",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListQueueMessages",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/queue",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetQueueItem",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/queue/:item_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "EnqueueMessage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/queue",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateQueueItem",
+    "http_method": "PATCH",
+    "path": "/minimax-desktop/api/v1/session/:id/queue/:item_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReorderQueue",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/queue/reorder",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteQueueItem",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/session/:id/queue/:item_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "GetTurnDiff",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/turn-diff",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "RequestRotation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/session/:id/request-rotation",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RequestCompaction",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/session/:id/request-compaction",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RevertTurnDiff",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/turn-diff/revert",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReapplyTurnDiff",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/turn-diff/reapply",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListArtifacts",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/artifacts",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetArtifactSpace",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/artifact-spaces/:id",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "LinkArtifactSpaceSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/artifact-spaces/:id/sessions",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SaveArtifactSpace",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/artifact-spaces",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteArtifactSpace",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/artifact-spaces/:id",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ImportArtifact",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/artifacts/import",
+    "category": "artifacts",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListSessionFiles",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:id/files",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionFileSyncs",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/file-syncs/query",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RecordSessionFileSync",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/file-syncs/record",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "QuerySessionFileSyncSources",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session-file-syncs/sources/query",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "InvalidateSessionFileSyncSources",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session-file-syncs/sources/invalidate",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "BindSessionFileSyncOwner",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session-file-syncs/sources/bind-owner",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeliverCron",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/cron/deliver",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemory",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/get",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AppendMemory",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/append",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "WriteMemory",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/write",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EditMemory",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/edit",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SearchMemory",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/search",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListMemoryTopics",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/list",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryTopic",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/get",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "WriteMemoryTopic",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/write",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteMemoryTopic",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/delete",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "AppendMemoryTopic",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/append",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EditMemoryTopic",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/edit",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SearchMemoryTopics",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/topics/search",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListMemoryDaily",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/daily/list",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryDaily",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/daily/get",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "WriteMemoryDaily",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/daily/write",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AppendMemoryDaily",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/daily/append",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DeleteMemoryDaily",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/daily/delete",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListMemoryArchive",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/archive/list",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryArchive",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/archive/get",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "WriteMemorySummary",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/summary/write",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SnapshotForMemoryCleanup",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/cleanup/snapshot",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ArchiveOldMemoryDaily",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/cleanup/archive-old",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "TriggerMemoryCleanup",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/cleanup/trigger",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "MarkMemorySession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/tracking/mark-session",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetUnremindedMemorySessions",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/tracking/unreminded",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "MarkMemoryReminded",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/tracking/mark-reminded",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "MarkMemoryReflected",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/tracking/mark-reflected",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryReflectionTimestamp",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/tracking/reflection-ts",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryV2Status",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/status",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListMemoryV2Sessions",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/sessions/list",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryV2SessionDoc",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/sessions/doc",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ForgetMemoryV2Content",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/forget",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ResetMemoryV2Scope",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/reset",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PrepareLegacyMemoryMigration",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/migration/prepare",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AcceptLegacyMemoryMigration",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/migration/accept",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "DiscardLegacyMemoryMigration",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/migration/discard",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMemoryV2Onboarding",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/onboarding/get",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CompleteMemoryV2Onboarding",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/memory/v2/onboarding/complete",
+    "category": "memory",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ReplyPermission",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/permission/:request_id/reply",
+    "category": "agents",
+    "phase": "P0",
+    "side_effect_inferred": "approval"
+  },
+  {
+    "method_name": "ReplyQuestion",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/question/:request_id/reply",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RejectQuestion",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/agent/:name/question/:request_id/reject",
+    "category": "agents",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetPermissionMode",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/permission/mode",
+    "category": "permission",
+    "phase": "P0",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SetPermissionMode",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/permission/mode",
+    "category": "permission",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListPendingPermissions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/permission/requests",
+    "category": "permission",
+    "phase": "P0",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "DismissPermission",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/permission/requests/:request_id",
+    "category": "permission",
+    "phase": "P0",
+    "side_effect_inferred": "approval"
+  },
+  {
+    "method_name": "BatchReplyPermissions",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/permission/batch-reply",
+    "category": "permission",
+    "phase": "P0",
+    "side_effect_inferred": "approval"
+  },
+  {
+    "method_name": "ListWorkspaceFileTree",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/tree",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceFileMetadata",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/metadata",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ReadWorkspaceFile",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/content",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SaveWorkspaceFile",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/save",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "BeginWorkspaceFileUpload",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/upload/begin",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AppendWorkspaceFileUpload",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/upload/append",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CommitWorkspaceFileUpload",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/upload/commit",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "AbortWorkspaceFileUpload",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/upload/abort",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SearchWorkspaceFiles",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/search",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "StopWorkspaceFileSearch",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/workspace/file/search/stop",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PreviewWorkspaceFile",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/preview",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceFileDiff",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/diff",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListWorkspaceFileDiffs",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/diffs",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceDiffContext",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/diff-context",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceFileStatus",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/status",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "OpenWorkspaceApp",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/open-app",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListIdeApps",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/ide-apps",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "OpenWorkspaceFile",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/open",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RevealWorkspaceFile",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/reveal",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "OpenWorkspaceFileInIde",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/open-in-ide",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SuggestCommitMessage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/commit-message",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ProbeWorkspaceGit",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/probe",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceGitChanges",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/changes",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceGitMetadata",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/metadata",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceGitGraph",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/graph",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceGitBranches",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/branches",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ListWorkspaceRecentBranches",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/branches/recent",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SearchWorkspaceGitBranches",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/branches/search",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceGitBranchPicker",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/branch-picker",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWorkspaceGitDefaultBranch",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/default-branch",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CheckoutWorkspaceGitBranch",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/checkout",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CreateWorkspaceGitBranch",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/create-branch",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CommitWorkspaceGit",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/commit",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CommitAndPushWorkspaceGit",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/commit-and-push",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "PushWorkspaceGit",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/push",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ApplyWorkspaceGitChangeAction",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/change-action",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "InvalidateWorkspaceGitSnapshot",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/invalidate",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "InvalidateAllWorkspaceGitSnapshots",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/invalidate-all",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListWorkspaceGitWorktrees",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CreateWorkspaceGitWorktree",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RemoveWorkspaceGitWorktree",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees/remove",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListManagedWorkspaceGitWorktrees",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees/managed",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "RemoveManagedWorkspaceGitWorktree",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees/managed/remove",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "RemoveManagedWorkspaceGitWorktreesBatch",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees/managed/remove-batch",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "RestoreSessionWorktree",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/worktrees/restore",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListFsDirs",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/fs/dirs",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetFsGitInfo",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/fs/git-info",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetReviewPreferences",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/review/preferences",
+    "category": "review",
+    "phase": "P2",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "UpdateReviewPreferences",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/review/preferences",
+    "category": "review",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ResolveAnnotationTarget",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:session_id/review/annotation/resolve",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListDeployedWebsites",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/drive/websites",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWebsiteTrafficStats",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/traffic",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetWebsiteState",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "CancelWebsiteDeployment",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "UnpublishWebsiteDeployment",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/unpublish",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RepublishWebsiteDeployment",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/republish",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateWebsiteWatermark",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/watermark",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UpdateWebsiteDisplayName",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/name",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SetWebsiteAlias",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "CheckWebsiteAliasAvailability",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias/check",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "UnbindWebsiteAlias",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias/unbind",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RemoveWebsiteAlias",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-settings/alias",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "GetWebsiteProjectSourceDownloadURL",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/drive/file/:node_id/website-project-source/download-url",
+    "category": "drive",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetLlmContextCapture",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/debug/llm-context/capture",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "PutLlmContextCapture",
+    "http_method": "PUT",
+    "path": "/minimax-desktop/api/v1/debug/llm-context/capture",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetLlmContextSessions",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/debug/llm-context/sessions",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionLlmContextOverview",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:session_id/debug/llm-context",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "GetSessionLlmContextCall",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/session/:session_id/debug/llm-context/calls/:call_id",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "ClearSessionLlmContextHistory",
+    "http_method": "DELETE",
+    "path": "/minimax-desktop/api/v1/session/:session_id/debug/llm-context",
+    "category": "session",
+    "phase": "P1",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "ListWorkspaceReviewCommits",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/review/commits/list",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetWorkspaceReviewSummary",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/review/summary",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListWorkspaceReviewFileDiffs",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/review/diffs/list",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetWorkspaceReviewFileContent",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/review/content",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SearchWorkspaceReviewDiffs",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/git/review/search",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "QuerySidebarProjects",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/sidebar/query",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "QuerySidebarProjectSessions",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/sidebar/sessions/query",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "QuerySidebarAgents",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/sidebar/agents/query",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetSidebarSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/sidebar/session",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "MoveSidebarProject",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/project/sidebar/move",
+    "category": "project",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "EnsureMiniAppHostSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/host-session",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SuggestMiniAppCreationIdeas",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/ideas",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StartMiniAppCreation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/creations/start",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StopMiniAppCreation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/creations/stop",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "RemoveMiniAppCreation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/creations/remove",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "destructive"
+  },
+  {
+    "method_name": "MaintainMiniAppCreation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/creations/maintenance",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "GetMiniAppCreation",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/creations/get",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ListMiniAppLaunchpad",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/miniapps/launchpad/state",
+    "category": "miniapps",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StreamEcho",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/stream_echo",
+    "category": "debug_diagnostics",
+    "phase": "P3",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "SubscribeGlobalEvents",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/events",
+    "category": "events",
+    "phase": "P0",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SubscribeExtensionStream",
+    "http_method": "GET",
+    "path": "/minimax-desktop/api/v1/extension/stream",
+    "category": "extension",
+    "phase": "P3",
+    "side_effect_inferred": "read"
+  },
+  {
+    "method_name": "SendMessage",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/message",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ResumeSession",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/resume",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "ContinueTurn",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/session/:id/turn-continuation",
+    "category": "session",
+    "phase": "P0",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "WatchWorkspaceFiles",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/file/watch",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  },
+  {
+    "method_name": "StreamWorkspaceFileSearch",
+    "http_method": "POST",
+    "path": "/minimax-desktop/api/v1/workspace/file/search/stream",
+    "category": "files_workspace",
+    "phase": "P2",
+    "side_effect_inferred": "mutating"
+  }
+]
