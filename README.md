@@ -1,18 +1,28 @@
 # MiniMax Code Go SDK
 
-A Go client for the **MiniMax Code app-server** shipped in `@minimax-ai/code` **0.7.8**.
+Go client for the MiniMax Code `mcode app-server` in `@minimax-ai/code` 0.7.8.
 
-The client speaks MiniMax's JSON-RPC session and the DesktopService tunnel inside it. It is not a wrapper around `mcode exec`, and it does not speak the OpenAI Codex app-server wire protocol. The Codex app-server guide is only the model for how this document is organized: connect, lifecycle, methods, events, approvals, errors, examples.
+This repository is not published by MiniMax. It does not vendor the CLI, and it does not speak the OpenAI Codex app-server protocol. You install `@minimax-ai/code` yourself and this module starts `mcode app-server`.
 
 Module: `github.com/XTeam-Wing/minimax-code-go-sdk`
 
 ## Install
 
+Go 1.22 or newer. This module has no release tag yet. Build it from a checkout of this repository:
+
 ```bash
-go get github.com/XTeam-Wing/minimax-code-go-sdk@latest
+go test ./...
 ```
 
-The SDK does not vendor the CLI. Install `@minimax-ai/code` yourself (Node.js 22.19+, 24, 25, or 26). The 0.7.8 postinstall script checks `better-sqlite3`; do not skip lifecycle scripts if you want the real server to start.
+In another module:
+
+```
+require github.com/XTeam-Wing/minimax-code-go-sdk v0.0.0
+
+replace github.com/XTeam-Wing/minimax-code-go-sdk => ../minimax-code-go-sdk
+```
+
+The CLI needs Node.js 22.19+, 24, 25, or 26. The 0.7.8 postinstall script checks `better-sqlite3`. Do not skip lifecycle scripts if you want the server to start.
 
 ```bash
 npm install @minimax-ai/code@0.7.8
@@ -24,7 +34,7 @@ Verified tarball SHA-256:
 
 ## Quickstart
 
-`examples/quickstart` starts `mcode app-server --stdio --foreground` in a data directory you choose and lists agents.
+`examples/quickstart` starts the server, lists agents, and closes the process.
 
 ```bash
 export MCODE_BIN=mcode
@@ -41,15 +51,13 @@ export MCODE_LEADING=/path/to/node_modules/@minimax-ai/code/cli.js
 go run ./examples/quickstart
 ```
 
+The same calls:
+
 ```go
 client, err := appserver.Start(ctx, appserver.Options{
     Command:   "mcode",
     DataDir:   dataDir,
     Workspace: workspace,
-    // Leave AuthMode empty. The CLI then uses remote-oauth and a headless
-    // API-key provider can answer SendMessage. AuthMode "desktop" is a
-    // Desktop lease, not the model provider; without that lease SendMessage
-    // returns 503 local_runtime_auth_pending.
 })
 if err != nil {
     log.Fatal(err)
@@ -59,106 +67,64 @@ defer client.Close()
 agents, err := client.Desktop().ListAgents(ctx, desktop.ListAgentsReq{})
 ```
 
-`Start` owns the child process. `Close` is safe to call more than once and stops that process. The client does not start an updater, a daemon, or an update loop.
+Leave `AuthMode` empty. The CLI then reports `remote-oauth`. `AuthMode: "desktop"` asks for a Desktop lease. Without that lease, `SendMessage` returns HTTP 503 `local_runtime_auth_pending`. The flag is not the model provider.
 
-## What you get
+`Start` owns the child process. `Close` stops that process. See [Process lifecycle](docs/best-practices/lifecycle.md) for what `Close` does on Linux, other Unix systems, and Windows, and what an abrupt crash does not guarantee.
 
-| Surface | Coverage |
+## API key
+
+Do not put a key in source, argv, or logs. Prepare an isolated data directory with the official CLI. The key stays in that directory.
+
+```bash
+export MINIMAX_DATA_DIR="$PWD/.mcode-data"
+export MCODE_PROVIDER_API_KEY=your-key
+mcode provider set-minimax-key --api-key-env MCODE_PROVIDER_API_KEY
+mcode provider use api-key
+```
+
+`your-key` above is a placeholder. Unset `AuthMode` when you start the SDK against that directory. `examples/sessionmodel` selects `minimax_api` / `MiniMax-M3.1-Flash` / `thinking.effort` `high` and reads it back with `GetSession`. It does not send a model turn. A data directory with no key returns HTTP 400 `NO_API_KEY` for that `SelectModel`.
+
+## Streaming and cancel
+
+`SendMessage`, `ResumeSession`, and `ContinueTurn` return an `EventStream`. `Recv` returns the next frame. Cancel the `Recv` context, or call `EventStream.Close`, to stop reading. That closes the response stream. It does not call `AbortSession`, and it does not by itself submit another turn.
+
+The client does not retry a call after a lost response. A retry of `SendMessage` or a git push can run the mutation twice. See [Retries](docs/best-practices/retries.md).
+
+## Errors
+
+A non-2xx DesktopService response is `*desktop.StatusError`. `Status` and `Body` are the HTTP status and the raw body. An HTTP 200 body whose top-level `base_resp.status_code` is not 0 is also `*desktop.BusinessError`, together with the decoded value. `errors.As` reads both.
+
+Permission prompts are not approvals. A nil handler makes the SDK answer a server request with an error. It does not call `ReplyPermission` for you.
+
+## Documentation
+
+| Document | What it answers |
 | --- | --- |
-| DesktopService methods | **470 / 470** named methods from the 0.7.8 IDL (`k` + `Yi`), each with a request struct and a response or stream type |
-| SSE methods | **8 / 8** (`SendMessage`, `ResumeSession`, `ContinueTurn`, `SubscribeGlobalEvents`, `SubscribeExtensionStream`, `WatchWorkspaceFiles`, `StreamWorkspaceFileSearch`, `StreamEcho`) |
-| Outer JSON-RPC requests | **8 / 8**: `initialize`, `runtime/authContext`, `account/read`, `account/login/start`, `account/login/cancel`, `account/logout`, `server/prepareRestart`, `desktopService/transport` |
-| Client notifications | **3 / 3**: `initialized`, `runtime/authContext`, `desktopService/transport` |
-| Server notifications | **3 / 3**: `account/login/completed`, `account/updated`, `desktopService/transport` |
-| JSON-RPC error codes | **11 / 11** |
-| Unix HTTP | **2 / 2**: `GET /readyz`, `GET /healthz` (unix listener only) |
+| [docs/api.md](docs/api.md) | Protocol, model selection, goals, memory, and stream behavior |
+| [docs/getting-started.zh-CN.md](docs/getting-started.zh-CN.md) | Chinese setup and the same limits |
+| [docs/method-inventory.md](docs/method-inventory.md) | Generated method table |
+| [docs/best-practices/README.md](docs/best-practices/README.md) | Lifecycle, cancel, retries, keys, permissions, errors, versions |
+| [docs/acceptance.zh-CN.md](docs/acceptance.zh-CN.md) | What a private acceptance run covered, and what it did not |
 
-The full method table is [docs/method-inventory.md](docs/method-inventory.md). The API guide is [docs/api.md](docs/api.md). A Chinese walkthrough is [docs/getting-started.zh-CN.md](docs/getting-started.zh-CN.md). The table above is the generated client surface. It is not a live pass count. The acceptance scope, including what was not re-run on later commits, is [docs/acceptance.zh-CN.md](docs/acceptance.zh-CN.md).
+The method table is the generated client surface. It is not a live pass count.
 
-`SelectModel` stores a session model only when `session_id` is set. The goal scenario uses `provider_id` `minimax_api`, `model_id` `MiniMax-M3.1-Flash`, and `thinking.effort` `high`. `GetSession` reads those values back from `session.model` and `session.effective_model`. A call without `session_id` changes the process default and does not store thinking. `CreateGoal` has no effort field. `examples/sessionmodel` performs that select and readback and does not send a model turn.
+## Compatibility
 
-User-workflow tests (`TestLiveWorkflow*`) are separate from the 497 API rows. `TestLiveWorkflowGoalDeliverable` waits through the verifier: budget 250000, stop at 230000 tokens, 3 minutes, or 90 seconds after the request count plateaus. Pass requires `go test -count=1 ./...` to exit 0, a diff of `share.go` only, unchanged `share_test.go` and `go.mod`, status `complete`, `status_reason` `complete(verifier_met)`, and `last_verification.verdict` `met`. The word PASS in test output is not the check. A limit is a trace in the feature report, not a pass and not an API-row pass. The report is `MCODE_FEATURE_REPORT`, or `$TMPDIR/mcode-feature-report.json`, and it is not committed.
+- CLI baseline is 0.7.8. `StrictBaseline` rejects any other `serverInfo.version`.
+- Stdio works on Linux, macOS, and Windows. `ListenUnix` needs a Unix socket and returns an error on Windows.
+- The private acceptance snapshot is commit `d907d518f23d5778220906ded6daa83ea7cf8d07`: 305 accepted, 19 remaining. That is not a pass of every later commit, and it is not all 497 inventory rows. Details are in the acceptance note.
 
-The 470 methods are the frozen IDL surface. The process also serves `/mavis/api/...` dispatcher leaves (permission, content, browser, communication, cron, matrix, usage, fs, file, git, runtime, diagnostics, and the agent routes `cTu` actually calls). Those are named methods on `mavis.Client`. `GET /mavis/api/agent/{name}` with no further segment is implemented inside `routeResolvedAgent` but `cTu` does not call it, so that info route is not on the client. `mavis.Raw` remains for a path outside that list.
-
-Alias fields are typed only when a 0.7.8 handler shows the JSON value. `PermissionReply` and `BatchPermissionDecision` are the numbers 0, 1, and 2, not the strings `deny` or `allowOnce`. `AgentShellPreference` is the number 0 (`auto`), 1 (`powershell`), or 2 (`git-bash`). A 2xx body whose top-level `base_resp.status_code` is not 0 returns `*desktop.BusinessError` and the decoded response. A missing envelope is not that error. `LocalHookScope` is 1 or 2. `SessionKind` stays `Scalar` because the server accepts either the known strings or the numbers 0 through 5. `CloudCronScheduleKind` and `WorkShareKind` stay `Scalar` because no reader was recovered. Request structs still have those `Scalar` fields, plus three `BaseReq` fields whose wire values were not recovered. Nested and response structs still contain `Scalar` fields wherever the schema says `kind: scalar` and no single `tsType` was recovered. Drive methods return `DriveGatewayResp`: `base_resp.status_code` / `status_msg`, plus `Raw` for the rest of the gateway JSON. The IDL response encoder does not run on those 13 paths. The gateway body beyond `base_resp` is opaque on this path.
-
-`desktop.RawCall` is only the escape hatch for a method that is not in this baseline. It is not a substitute for the 470 named methods.
-
-## Protocol, in one page
-
-1. Connect with stdio (newline-delimited JSON) or a Unix socket (WebSocket on `/`, no `Origin` header).
-2. Send `initialize` with `protocolVersion: 1` and DesktopService `transportProtocolVersion: 2`. Both must match exactly.
-3. Send the `initialized` notification before any other call.
-4. DesktopService calls are HTTP requests inside `desktopService/transport` frames: `request`, then `response-start` / `stream-chunk` / `stream-done` / `stream-error`.
-5. SSE methods use a stream window (default 16, max 256). The client returns credits as you read. It does not read ahead of that window.
-
-Codex uses thread and turn methods on the outer session. MiniMax keeps session, permission, file, MCP, and model calls behind the DesktopService tunnel. Do not point this client at `codex app-server`.
-
-## Approvals
-
-A nil handler is not an approval. The SDK never calls `ReplyPermission` or `BatchReplyPermissions` for you. Permission prompts arrive on `SubscribeGlobalEvents` (`permission.ask` is one confirmed type, not a closed list). Your code decides, then calls the reply method.
-
-Lost responses are not retried. Reconnect does not replay a call that might already have run.
-
-## Support
-
-- Go **1.22** or newer.
-- Operating systems: stdio on Linux, macOS, and Windows. Unix sockets and `/readyz` need a Unix socket (`GOOS=windows` builds, but `ListenUnix` returns an error).
-- CLI baseline: **0.7.8** only. `StrictBaseline` rejects other `serverInfo.version` values. Other versions are unverified, not claimed compatible.
-- Dependencies: the standard library only.
-
-## Tests
+## Development
 
 ```bash
 gofmt -w .
 go vet ./...
 go test ./...
 go test -race ./...
-GOOS=windows GOARCH=amd64 go test -c -o /dev/null ./appserver
 ```
 
-Official app-server end-to-end (not a mock) uses a temporary data directory and workspace:
-
-```bash
-MCODE_E2E=1 \
-MCODE_BIN=node \
-MCODE_LEADING=/path/to/@minimax-ai/code/cli.js \
-go test -count=1 -run 'TestLive' ./appserver
-```
-
-Regenerate the IDL bindings from the pinned tarball. Category labels come from `internal/inventory/categories.json`.
-
-```bash
-python3 tools/gen_desktop.py /path/to/minimax-ai-code-0.7.8.tgz
-```
-
-Headless API-key model turns are a separate opt-in. Prepare an isolated data directory, with the key only in the `set-minimax-key` child:
-
-```bash
-export MINIMAX_DATA_DIR="$PWD/.mcode-data"
-export MCODE_PROVIDER_API_KEY=...   # not an argument, and not committed
-mcode provider set-minimax-key --api-key-env MCODE_PROVIDER_API_KEY
-mcode provider use api-key
-mcode provider test minimax_api --json
-```
-
-No-auth protocol tests, with `--auth-mode desktop` and a temporary data directory:
-
-```bash
-MCODE_E2E=1 MCODE_BIN=node MCODE_LEADING=/path/to/cli.js \
-  go test -count=1 -run 'TestLiveAppServer|TestLiveUnixHealth|TestLiveSurface|TestLiveLocalBatch' ./appserver
-```
-
-Model scenarios, only after the API key is stored in an isolated data directory. Leave `AuthMode` empty. `CreateGoal` starts a model turn. A subagent is not counted unless `subagent.execution` reports `started` and `GetSession` reads the child.
-
-```bash
-MCODE_E2E_LLM=1 MCODE_LLM_DATA_DIR="$MINIMAX_DATA_DIR" \
-  go test -count=1 -run 'TestLiveModelTurn|TestLiveGoalAndSubagent' ./appserver
-```
-
-`TestCapabilityGate` refuses a complete verdict while rows are still `fakecontract` or `blocked`. GitHub Actions runs the no-auth tests only.
+GitHub Actions runs those checks and a no-key app-server subset. It does not run model turns. Regenerate bindings from the pinned tarball with `python3 tools/gen_desktop.py /path/to/minimax-ai-code-0.7.8.tgz`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Protocol shapes were recovered from the MIT-licensed `@minimax-ai/code` 0.7.8 package. This repository does not ship that CLI or its native addons.
+MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Protocol shapes come from the MIT-licensed `@minimax-ai/code` 0.7.8 package. This repository does not ship that CLI.
